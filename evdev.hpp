@@ -17,12 +17,17 @@
 #ifndef HEADER_EVDEV_HPP
 #define HEADER_EVDEV_HPP
 
+#include <sstream>
+
 class Evdev
 {
 private:
   int m_fd;
   uinput_user_dev m_user_dev;
-  
+  bool ev_abs_bit = false;
+  bool ev_rel_bit = false;
+  bool ev_key_bit = false;
+
 public:
   Evdev()
   {
@@ -32,39 +37,29 @@ public:
       throw std::runtime_error(strerror(errno));
     }
 
-    ioctl(m_fd, UI_SET_EVBIT, EV_ABS);
-    ioctl(m_fd, UI_SET_EVBIT, EV_KEY);
-    ioctl(m_fd, UI_SET_EVBIT, EV_REL);
+    memset(&m_user_dev, 0, sizeof(m_user_dev));
+  }
 
-    //add_abs(ABS_X, 0, 1913, 0, 0);
-    //add_abs(ABS_Y, 0, 1076, 0, 0);
-    add_rel(REL_X);
-    add_rel(REL_Y);
-    add_rel(REL_WHEEL);
-    add_rel(REL_HWHEEL);
-    add_abs(ABS_PRESSURE, 0, 143, 0, 0);
-
-    add_key(BTN_LEFT);
-    add_key(BTN_RIGHT);
-    add_key(BTN_MIDDLE);
-
-    add_key(KEY_FORWARD);
-    add_key(KEY_BACK);
-
-    //add_key(BTN_TOOL_PEN);
-    //add_key(BTN_TOOL_FINGER);
-      
+  void finish()
+  {
     strncpy(m_user_dev.name, "uDraw Game Tablet for PS3", UINPUT_MAX_NAME_SIZE);
     m_user_dev.id.version = 0;
     m_user_dev.id.bustype = 0;
     m_user_dev.id.vendor  = 0;
     m_user_dev.id.product = 0;
 
-    write(m_fd, &m_user_dev, sizeof(m_user_dev));
-
-    if (ioctl(m_fd, UI_DEV_CREATE))
+    if (write(m_fd, &m_user_dev, sizeof(m_user_dev)) < 0)
     {
-      throw std::runtime_error(strerror(errno));
+      std::ostringstream out;
+      out << "write: " << strerror(errno);
+      throw std::runtime_error(out.str());
+    }
+
+    if (ioctl(m_fd, UI_DEV_CREATE) < 0)
+    {
+      std::ostringstream out;
+      out << "ioctl: " << strerror(errno);
+      throw std::runtime_error(out.str());
     }
   }
 
@@ -93,19 +88,37 @@ public:
     // sync: send(EV_SYN, SYN_REPORT, 0);
   }
 
-private:
+public:
   void add_key(int code)
   {
+    if (!ev_key_bit) 
+    {
+      ev_key_bit = true;
+      ioctl(m_fd, UI_SET_EVBIT, EV_KEY);
+    }
+
     ioctl(m_fd, UI_SET_KEYBIT, code);
   }
 
   void add_rel(int code)
   {
+    if (!ev_rel_bit) 
+    {
+      ev_rel_bit = true;
+      ioctl(m_fd, UI_SET_EVBIT, EV_REL);
+    }
+
     ioctl(m_fd, UI_SET_RELBIT, code);
   }
 
   void add_abs(int code, int min, int max, int fuzz, int flat)
   {
+    if (!ev_abs_bit) 
+    {
+      ev_abs_bit = true;
+      ioctl(m_fd, UI_SET_EVBIT, EV_ABS);
+    }
+
     m_user_dev.absmin[code] = min;
     m_user_dev.absmax[code] = max; 
     m_user_dev.absfuzz[code] = fuzz;

@@ -76,9 +76,76 @@ void print_raw_data(std::ostream& out, uint8_t* data, int len)
 
 }
 
+struct Options
+{
+  bool gamepad_mode  = false;
+  bool keyboard_mode = false;
+  bool touchpad_mode = false;
+  bool tablet_mode   = false;
+  bool accelerometer_mode = false;
+};
+
+void print_help(const char* argv0)
+{
+  std::cout << "Usage: " << argv0 << "[OPTION]...\n" 
+            << "Basic driver for the PS3 uDraw graphic tablet\n"
+            << "\n"
+            << "Options:\n"
+            << "  -h, --help  display this help\n"
+            << "  --touchpad  use the device as touchpad\n"
+            << "  --tablet    use the device as graphic tablet\n"
+            << "  --gamepad   use the device as gamepad\n"
+            << "  --keyboard  use the device as keyboard\n"
+            << "  --accelerometer  use the accelerometer\n"
+            << std::endl;
+}
+
+Options parse_args(int argc, char** argv)
+{
+  Options opts;
+
+  for(int i = 1; i < argc; ++i)
+  {
+    if (strcmp("--gamepad", argv[i]) == 0)
+    {
+      opts.gamepad_mode = true;
+    }
+    else if (strcmp("--keyboard", argv[i]) == 0)
+    {
+      opts.keyboard_mode = true;
+    }
+    else if (strcmp("--tablet", argv[i]) == 0)
+    {
+      opts.tablet_mode = true;
+    }
+    else if (strcmp("--touchpad", argv[i]) == 0)
+    {
+      opts.touchpad_mode = true;
+    }
+    else if (strcmp("--accelerometer", argv[i]) == 0)
+    {
+      opts.accelerometer_mode = true;
+    }
+    else if (strcmp("--help", argv[i]) == 0 ||
+             strcmp("-h", argv[i]) == 0)
+    {
+      print_help(argv[0]);
+      exit(EXIT_SUCCESS);
+    }
+    else
+    {
+      std::cerr << "unknown option: " << argv[i] << std::endl;
+      exit(EXIT_FAILURE);
+    }
+  }
+
+  return opts;
+}
 
 int main(int argc, char** argv)
 {
+  Options opts = parse_args(argc, argv);
+
   usb_init();
   usb_find_busses();
   usb_find_devices();
@@ -109,21 +176,111 @@ int main(int argc, char** argv)
     usbdev->claim_interface(0);
 
     Evdev evdev;
+    
+    // init evdev
+    if (opts.gamepad_mode)
+    {
+      evdev.add_abs(ABS_X, -1, 1, 0, 0);
+      evdev.add_abs(ABS_Y, -1, 1, 0, 0);
+
+      evdev.add_key(BTN_A);
+      evdev.add_key(BTN_B);
+      evdev.add_key(BTN_X);
+      evdev.add_key(BTN_Y);
+
+      evdev.add_key(BTN_START);
+      evdev.add_key(BTN_SELECT);
+    }
+    else if (opts.keyboard_mode)
+    {
+      evdev.add_key(KEY_LEFT);
+      evdev.add_key(KEY_RIGHT);
+      evdev.add_key(KEY_UP);
+      evdev.add_key(KEY_DOWN);
+
+      evdev.add_key(KEY_ENTER);
+      evdev.add_key(KEY_SPACE);
+      evdev.add_key(KEY_A);
+      evdev.add_key(KEY_Z);
+
+      evdev.add_key(KEY_ESC);
+      evdev.add_key(KEY_TAB);
+    }
+    else if (opts.tablet_mode)
+    {
+      evdev.add_abs(ABS_X, 0, 1913, 0, 0);
+      evdev.add_abs(ABS_Y, 0, 1076, 0, 0);
+      evdev.add_abs(ABS_PRESSURE, 0, 143, 0, 0);
+
+      evdev.add_key(BTN_TOUCH);
+      evdev.add_key(BTN_TOOL_PEN);
+
+      evdev.add_rel(REL_WHEEL);
+      evdev.add_rel(REL_HWHEEL);
+
+      evdev.add_rel(REL_X);
+      evdev.add_rel(REL_Y);
+    }
+    else if (opts.touchpad_mode)
+    {
+      evdev.add_key(BTN_LEFT);
+      evdev.add_key(BTN_RIGHT);
+      evdev.add_key(BTN_MIDDLE);
+
+    /*
+      add_key(KEY_FORWARD);
+      add_key(KEY_BACK);
+    */
+
+      evdev.add_rel(REL_WHEEL);
+      evdev.add_rel(REL_HWHEEL);
+
+      evdev.add_rel(REL_X);
+      evdev.add_rel(REL_Y);
+    }
+
+    evdev.finish();
 
     usbdev->listen
       (3,
        [&](uint8_t* data, int size)
        {
-         if (false)
+         UDrawDecoder decoder(data, size);
+
+         if (opts.keyboard_mode)
          {
-           print_raw_data(std::cout, data, size);
-           std::cout << std::endl;
+           evdev.send(EV_KEY, KEY_LEFT,  decoder.get_left());
+           evdev.send(EV_KEY, KEY_RIGHT, decoder.get_right());
+           evdev.send(EV_KEY, KEY_UP,    decoder.get_up());
+           evdev.send(EV_KEY, KEY_DOWN,  decoder.get_down());
+
+           evdev.send(EV_KEY, KEY_ENTER, decoder.get_cross());
+           evdev.send(EV_KEY, KEY_SPACE, decoder.get_circle());
+           evdev.send(EV_KEY, KEY_A, decoder.get_square());
+           evdev.send(EV_KEY, KEY_Z, decoder.get_triangle());
+
+           evdev.send(EV_KEY, KEY_ESC,  decoder.get_start());
+           evdev.send(EV_KEY, KEY_TAB, decoder.get_select());
+
+           evdev.send(EV_SYN, SYN_REPORT, 0);
          }
-         
-         if (true)
+         else if (opts.gamepad_mode)
          {
-           UDrawDecoder decoder(data, size);
-#if 0
+           evdev.send(EV_ABS, ABS_X, -1 * decoder.get_left() + 1 * decoder.get_right());
+           evdev.send(EV_ABS, ABS_Y, -1 * decoder.get_up()   + 1 * decoder.get_down());
+
+           evdev.send(EV_KEY, BTN_A, decoder.get_cross());
+           evdev.send(EV_KEY, BTN_B, decoder.get_circle());
+           evdev.send(EV_KEY, BTN_X, decoder.get_square());
+           evdev.send(EV_KEY, BTN_Y, decoder.get_triangle());
+
+           evdev.send(EV_KEY, BTN_START,  decoder.get_start());
+           evdev.send(EV_KEY, BTN_SELECT, decoder.get_select());
+
+           evdev.send(EV_SYN, SYN_REPORT, 0);
+         }
+         else if (opts.tablet_mode)
+         {
            if (decoder.get_mode() == UDrawDecoder::PEN_MODE)
            {
              evdev.send(EV_ABS, ABS_X, decoder.get_x());
@@ -133,11 +290,11 @@ int main(int argc, char** argv)
              
              if (decoder.get_pressure() > 0)
              {
-               evdev.send(EV_KEY, BTN_LEFT, 1);
+               evdev.send(EV_KEY, BTN_TOUCH, 1);
              }
              else
              {
-               evdev.send(EV_KEY, BTN_LEFT, 0);
+               evdev.send(EV_KEY, BTN_TOUCH, 0);
              }
 
              evdev.send(EV_SYN, SYN_REPORT, 0);
@@ -147,16 +304,11 @@ int main(int argc, char** argv)
              evdev.send(EV_KEY, BTN_TOOL_PEN, 0);
              evdev.send(EV_SYN, SYN_REPORT, 0);
            }
-#endif
-           evdev.send(EV_KEY, BTN_RIGHT,  decoder.get_left());
-           evdev.send(EV_KEY, BTN_MIDDLE, decoder.get_up());
-           evdev.send(EV_KEY, BTN_LEFT,   decoder.get_right());
-
-           evdev.send(EV_REL, REL_WHEEL, decoder.get_triangle() ? 1 : 0);
-           evdev.send(EV_REL, REL_WHEEL, decoder.get_cross() ? -1 : 0);
-
-           evdev.send(EV_KEY, KEY_BACK,    decoder.get_circle());
-           evdev.send(EV_KEY, KEY_FORWARD, decoder.get_square());
+         }
+         else if (opts.touchpad_mode)
+         {
+           evdev.send(EV_KEY, BTN_LEFT,  decoder.get_right());
+           evdev.send(EV_KEY, BTN_RIGHT, decoder.get_left());
 
            if (decoder.get_mode() == UDrawDecoder::FINGER_MODE)
            {
@@ -204,36 +356,10 @@ int main(int argc, char** argv)
            else
            {
              finger_touching = false;
-           }
-
-           if (false)
-           {
-             // FIXME: does not work as is, needs throttling
-
-             if (decoder.get_mode() == UDrawDecoder::PINCH_MODE)
-             {
-               if (!pinch_touching)
-               {
-                 touch_pos_x = decoder.get_x();
-                 touch_pos_y = decoder.get_y();
-                 pinch_touching = true;
-               }
-
-               evdev.send(EV_REL, REL_HWHEEL, decoder.get_x() - touch_pos_x);
-               evdev.send(EV_REL, REL_WHEEL,  decoder.get_y() - touch_pos_y);
-
-               touch_pos_x = decoder.get_x();
-               touch_pos_y = decoder.get_y();
-             }
-             else
-             {
-               pinch_touching = false;
-             }
-           }
-
+           }  
            evdev.send(EV_SYN, SYN_REPORT, 0);
          }
-         else
+         else if (opts.accelerometer_mode)
          {
            if (size != 27)
            {
@@ -286,6 +412,51 @@ int main(int argc, char** argv)
 
              
              std::cout << std::endl;
+           }
+         }
+         else
+         {
+           print_raw_data(std::cout, data, size);
+           std::cout << std::endl;
+         }
+           
+         if (false)
+         {
+           evdev.send(EV_KEY, BTN_RIGHT,  decoder.get_left());
+           evdev.send(EV_KEY, BTN_MIDDLE, decoder.get_up());
+           evdev.send(EV_KEY, BTN_LEFT,   decoder.get_right());
+
+           evdev.send(EV_REL, REL_WHEEL, decoder.get_triangle() ? 1 : 0);
+           evdev.send(EV_REL, REL_WHEEL, decoder.get_cross() ? -1 : 0);
+
+           evdev.send(EV_KEY, KEY_BACK,    decoder.get_circle());
+           evdev.send(EV_KEY, KEY_FORWARD, decoder.get_square());
+
+           if (false)
+           {
+             // FIXME: does not work as is, needs throttling
+
+             if (decoder.get_mode() == UDrawDecoder::PINCH_MODE)
+             {
+               if (!pinch_touching)
+               {
+                 touch_pos_x = decoder.get_x();
+                 touch_pos_y = decoder.get_y();
+                 pinch_touching = true;
+               }
+
+               evdev.send(EV_REL, REL_HWHEEL, decoder.get_x() - touch_pos_x);
+               evdev.send(EV_REL, REL_WHEEL,  decoder.get_y() - touch_pos_y);
+
+               touch_pos_x = decoder.get_x();
+               touch_pos_y = decoder.get_y();
+             }
+             else
+             {
+               pinch_touching = false;
+             }
+
+             evdev.send(EV_SYN, SYN_REPORT, 0);
            }
          }
        });

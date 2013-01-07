@@ -115,6 +115,9 @@ public:
   bool get_cross() const { return m_data[0] & 2; }
   bool get_triangle() const { return m_data[0] & 8; }
   bool get_circle() const { return m_data[0] & 4; }
+
+  bool get_start() const { return m_data[1] & 1; }
+  bool get_select() const { return m_data[1] & 2; }
 };
 
 
