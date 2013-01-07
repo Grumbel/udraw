@@ -1,3 +1,19 @@
+//  Linux driver for the uDraw graphic tablet
+//  Copyright (C) 2012 Ingo Ruhnke <grumbel@gmail.com>
+//
+//  This program is free software: you can redistribute it and/or modify
+//  it under the terms of the GNU General Public License as published by
+//  the Free Software Foundation, either version 3 of the License, or
+//  (at your option) any later version.
+//
+//  This program is distributed in the hope that it will be useful,
+//  but WITHOUT ANY WARRANTY; without even the implied warranty of
+//  MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//  GNU General Public License for more details.
+//
+//  You should have received a copy of the GNU General Public License
+//  along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
 #include <libusb-1.0/libusb.h>
 #include <boost/format.hpp>
 #include <memory>
@@ -17,6 +33,10 @@
 #include <fcntl.h>
 #include <linux/input.h>
 #include <linux/uinput.h>
+
+#include "usb_device.hpp"
+#include "evdev.hpp"
+#include "udraw_decoder.hpp"
 
 class USBDevice;
 
@@ -56,369 +76,6 @@ void print_raw_data(std::ostream& out, uint8_t* data, int len)
 
 }
 
-class USBDevice
-{
-private:
-  struct usb_device*     dev;
-  struct usb_dev_handle* handle;
-
-public: 
-  USBDevice(struct usb_device* dev_) :
-  dev(dev_)
-  {
-    handle = usb_open(dev);
-    if (!handle)
-    {
-      throw std::runtime_error("Error opening usb device");
-    }
-  }
-
-  ~USBDevice()
-  {
-    usb_close(handle);
-  }
-
-  void clear_halt(int ep)
-  {
-    if (usb_clear_halt(handle, ep) != 0)
-    {
-      std::cout << "Failure to reset_ep: " << ep << std::endl;
-    }    
-  }
-
-  void reset()
-  {
-    if (usb_reset(handle) != 0)
-    {
-      std::cout << "Failure to reset" << std::endl;
-    }
-  }
-
-  void detach_kernel_driver(int iface)
-  {
-    if (usb_detach_kernel_driver_np(handle, iface) < 0)
-    {
-      std::cerr << "couldn't detach interface " << iface << std::endl;
-    }
-  }
-
-  void claim_interface(int iface)
-  {
-    if (usb_claim_interface(handle, iface) != 0)
-    {
-      std::ostringstream str;
-      str << "Couldn't claim interface " << iface;
-      throw std::runtime_error(str.str());
-    }
-  }
-
-
-  void release_interface(int iface)
-  {
-    if (usb_release_interface(handle, iface) != 0)
-    {
-      std::ostringstream str;
-      str << "Couldn't release interface " << iface;
-      throw std::runtime_error(str.str());
-    }
-  }
-
-  void set_configuration(int configuration)
-  {
-    if (usb_set_configuration(handle, configuration) != 0)
-    {
-      std::ostringstream str;
-      str << "Couldn't set configuration " << configuration;
-      throw std::runtime_error(str.str());
-    }
-  }
-
-  void set_altinterface(int interface)
-  {
-    if (usb_set_altinterface(handle, interface) != 0)
-    {
-      std::ostringstream str;
-      str << "Couldn't set alternative interface " << interface;
-      throw std::runtime_error(str.str());
-    }
-  }
-
-  int read(int endpoint, uint8_t* data, int len)
-  {
-    return usb_interrupt_read(handle, endpoint, (char*)data, len, 0);
-  }
-
-  int write(int endpoint, uint8_t* data, int len)
-  {
-    return usb_interrupt_write(handle, endpoint, (char*)data, len, 0);
-  }
-
-  /* uint8_t  requesttype
-     uint8_t  request
-     uint16_t value;
-     uint16_t index;
-     uint16_t length;
-  */
-  int ctrl_msg(int requesttype, int request, 
-               int value, int index,
-               uint8_t* data, int size) 
-  {
-    return usb_control_msg(handle, 
-                           requesttype,  request, 
-                           value,  index,
-                           (char*)data, size, 
-                           0 /* timeout */);
-  }
-  
-  void print_info()
-  {
-    for(int i = 0; i < dev->descriptor.bNumConfigurations; ++i)
-    {
-      std::cout << "Configuration: " << i << std::endl;
-      for(int j = 0; j < dev->config[i].bNumInterfaces; ++j)
-      {
-        std::cout << "  Interface " << j << ":" << std::endl;
-        for(int k = 0; k < dev->config[i].interface[j].num_altsetting; ++k)
-        {
-          for(int l = 0; l < dev->config[i].interface[j].altsetting[k].bNumEndpoints; ++l)
-          {
-            std::cout << "    Endpoint: " 
-                      << int(dev->config[i].interface[j].altsetting[k].endpoint[l].bEndpointAddress & USB_ENDPOINT_ADDRESS_MASK)
-                      << ((dev->config[i].interface[j].altsetting[k].endpoint[l].bEndpointAddress & USB_ENDPOINT_DIR_MASK) ? " (IN)" : " (OUT)")
-                      << std::endl;
-          }
-        }
-      }
-    }
-  }
-
-  void listen(int endpoint, std::function<void (uint8_t* data, int)> callback)
-  {
-    try 
-    {
-      bool this_quit = false;
-      std::cout << "Reading from endpoint " << endpoint << std::endl;;
-      while(!this_quit)
-      {
-        uint8_t data[8192];
-        int ret = read(endpoint, data, sizeof(data));
-        if (ret < 0)
-        {
-          std::cerr << "USBError: " << ret << "\n" << usb_strerror() << std::endl;
-          std::cerr << "Shutting down" << std::endl;
-          this_quit = true;
-        }
-        else
-        {
-          callback(data, ret);
-        }
-      }
-
-    } 
-    catch(std::exception& err) 
-    {
-      std::cout << "Error: " << err.what() << std::endl;
-    }
-  }
-};
-
-class Evdev
-{
-private:
-  int m_fd;
-  uinput_user_dev m_user_dev;
-  
-public:
-  Evdev()
-  {
-    m_fd = open("/dev/uinput", O_RDWR | O_NDELAY);
-    if (m_fd < 0)
-    {
-      throw std::runtime_error(strerror(errno));
-    }
-
-    ioctl(m_fd, UI_SET_EVBIT, EV_ABS);
-    ioctl(m_fd, UI_SET_EVBIT, EV_KEY);
-    ioctl(m_fd, UI_SET_EVBIT, EV_REL);
-
-    //add_abs(ABS_X, 0, 1913, 0, 0);
-    //add_abs(ABS_Y, 0, 1076, 0, 0);
-    add_rel(REL_X);
-    add_rel(REL_Y);
-    add_rel(REL_WHEEL);
-    add_rel(REL_HWHEEL);
-    add_abs(ABS_PRESSURE, 0, 143, 0, 0);
-
-    add_key(BTN_LEFT);
-    add_key(BTN_RIGHT);
-    add_key(BTN_MIDDLE);
-
-    add_key(KEY_FORWARD);
-    add_key(KEY_BACK);
-
-    //add_key(BTN_TOOL_PEN);
-    //add_key(BTN_TOOL_FINGER);
-      
-    strncpy(m_user_dev.name, "uDraw Game Tablet for PS3", UINPUT_MAX_NAME_SIZE);
-    m_user_dev.id.version = 0;
-    m_user_dev.id.bustype = 0;
-    m_user_dev.id.vendor  = 0;
-    m_user_dev.id.product = 0;
-
-    write(m_fd, &m_user_dev, sizeof(m_user_dev));
-
-    if (ioctl(m_fd, UI_DEV_CREATE))
-    {
-      throw std::runtime_error(strerror(errno));
-    }
-  }
-
-  void send(uint16_t type, uint16_t code, int32_t value)
-  {
-    struct input_event ev;      
-    memset(&ev, 0, sizeof(ev));
-
-    gettimeofday(&ev.time, NULL);
-
-    ev.type  = type;
-    ev.code  = code;
-
-    if (ev.type == EV_KEY)
-    {
-      ev.value = (value>0) ? 1 : 0;
-    }
-    else
-    {
-      ev.value = value;
-    }
-
-    if (write(m_fd, &ev, sizeof(ev)) < 0)
-      throw std::runtime_error(std::string("uinput:send_button: ") + strerror(errno)); 
-
-    // sync: send(EV_SYN, SYN_REPORT, 0);
-  }
-
-private:
-  void add_key(int code)
-  {
-    ioctl(m_fd, UI_SET_KEYBIT, code);
-  }
-
-  void add_rel(int code)
-  {
-    ioctl(m_fd, UI_SET_RELBIT, code);
-  }
-
-  void add_abs(int code, int min, int max, int fuzz, int flat)
-  {
-    m_user_dev.absmin[code] = min;
-    m_user_dev.absmax[code] = max; 
-    m_user_dev.absfuzz[code] = fuzz;
-    m_user_dev.absflat[code] = flat;
-
-    ioctl(m_fd, UI_SET_ABSBIT, code);
-  }
-};
-
-/*
-  data[7]; // right
-  data[8]; // left
-  data[9]; // up
-  data[10]; // down
-
-  data[0] & 1 // square
-  data[0] & 2 // cross
-  data[0] & 8 // triangle
-  data[0] & 4 // circle
-
-  data[1] & 1 // select
-  data[1] & 2 // start
-  data[1] & 0x10 // guide
-
-  // 0x00 - nothing
-  // 0x80 - finger
-  // 0x40 - pen
-  // weird stuff when pinching (angle)
-  data[11]             
-
-  data[12]; // pinch distance
-
-  data[13]; // pressure, 0x70 neutral
-*/
-class UDrawDecoder
-{
-private:
-  uint8_t* m_data;
-  int m_len;
-
-public:
-  enum { 
-    PEN_MODE    = 0x40, 
-    FINGER_MODE = 0x80,
-    PINCH_MODE
-  };
-
-  UDrawDecoder(uint8_t* data, int len) :
-    m_data(data), m_len(len)
-  {
-  }
-
-  int get_x() const
-  {
-    // pen: 3px resolution
-    // finger: 1px resolution
-    return m_data[15] * 255 + m_data[17]; 
-  }
-
-  int get_y() const
-  {
-    return m_data[16] * 255 + m_data[18];
-  }
-
-  int get_pressure() const
-  {
-    return m_data[13] - 0x70;
-  }
-
-  int get_orientation() const
-  {
-    return m_data[11] - 0xc0;
-  }
-
-  int get_mode() const
-  {
-    //std::cout << int(m_data[11]) << std::endl;
-    if (0xc0 <= m_data[11] && m_data[11] <= 253)
-      return PINCH_MODE;
-    else
-      return m_data[11];
-  }
-
-  bool get_up() const
-  {
-    return m_data[9];
-  }
-
-  bool get_down() const
-  {
-    return m_data[10];
-  }
-
-  bool get_left() const
-  {
-    return m_data[8];
-  }
-
-  bool get_right() const
-  {
-    return m_data[7];
-  }
-
-  bool get_square() const { return m_data[0] & 1; }
-  bool get_cross() const { return m_data[0] & 2; }
-  bool get_triangle() const { return m_data[0] & 8; }
-  bool get_circle() const { return m_data[0] & 4; }
-};
 
 int main(int argc, char** argv)
 {
@@ -440,6 +97,8 @@ int main(int argc, char** argv)
   int touch_pos_y = 0;
   bool finger_touching = false;
   bool pinch_touching = false;
+  bool scroll_wheel = false;
+  int wheel_distance = 0;
             
   if (dev)
   {
@@ -506,13 +165,41 @@ int main(int argc, char** argv)
                touch_pos_x = decoder.get_x();
                touch_pos_y = decoder.get_y();
                finger_touching = true;
+
+               if (touch_pos_x > 1800)
+               {
+                 scroll_wheel = true;
+                 wheel_distance = 0;
+               }
+               else
+               {
+                 scroll_wheel = false;
+               }
              }
 
-             evdev.send(EV_REL, REL_X, decoder.get_x() - touch_pos_x);
-             evdev.send(EV_REL, REL_Y, decoder.get_y() - touch_pos_y);
+             if (scroll_wheel)
+             {
+               wheel_distance += (decoder.get_y() - touch_pos_y) / 10;
 
-             touch_pos_x = decoder.get_x();
-             touch_pos_y = decoder.get_y();
+               int rel = wheel_distance/10;
+               if (rel != 0)
+               {
+                 evdev.send(EV_REL, REL_WHEEL, -rel);
+
+                 wheel_distance -= rel;
+                 touch_pos_x = decoder.get_x();
+                 touch_pos_y = decoder.get_y();
+                 //std::cout << rel << " " << wheel_distance << std::endl;
+               }
+             }
+             else
+             {
+               evdev.send(EV_REL, REL_X, decoder.get_x() - touch_pos_x);
+               evdev.send(EV_REL, REL_Y, decoder.get_y() - touch_pos_y);
+
+               touch_pos_x = decoder.get_x();
+               touch_pos_y = decoder.get_y();
+             }
            }
            else
            {
