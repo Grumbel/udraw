@@ -24,12 +24,15 @@ class Evdev
 private:
   int m_fd;
   uinput_user_dev m_user_dev;
-  bool ev_abs_bit = false;
-  bool ev_rel_bit = false;
-  bool ev_key_bit = false;
+  bool ev_abs_bit;
+  bool ev_rel_bit;
+  bool ev_key_bit;
 
 public:
-  Evdev()
+  Evdev() :
+    ev_abs_bit(false),
+    ev_rel_bit(false),
+    ev_key_bit(false)
   {
     m_fd = open("/dev/uinput", O_RDWR | O_NDELAY);
     if (m_fd < 0)

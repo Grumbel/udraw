@@ -11,7 +11,7 @@ scons
 git
 libusb-1.0
 boost
-
+g++-4.5 or above
 
 Compilation:
 ------------

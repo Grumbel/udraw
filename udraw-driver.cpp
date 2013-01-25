@@ -78,11 +78,19 @@ void print_raw_data(std::ostream& out, uint8_t* data, int len)
 
 struct Options
 {
-  bool gamepad_mode  = false;
-  bool keyboard_mode = false;
-  bool touchpad_mode = false;
-  bool tablet_mode   = false;
-  bool accelerometer_mode = false;
+  bool gamepad_mode;
+  bool keyboard_mode;
+  bool touchpad_mode;
+  bool tablet_mode;
+  bool accelerometer_mode;
+
+  Options() :
+    gamepad_mode(false),
+    keyboard_mode(false),
+    touchpad_mode(false),
+    tablet_mode(false),
+    accelerometer_mode(false)
+  {}
 };
 
 void print_help(const char* argv0)
