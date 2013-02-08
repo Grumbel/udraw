@@ -4,6 +4,8 @@ uDraw PS3 Linux Driver
 Quick&dirty driver for the PS3 uDraw graphics tablet. If customization
 is needed, hack the source.
 
+For a Windows driver, see: http://brandonw.net/udraw/
+
 
 Requirements:
 -------------
