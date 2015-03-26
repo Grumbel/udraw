@@ -19,7 +19,7 @@ project(udraw)
 
 set(WARNINGS 0 CACHE BOOL "Switch on extra warnings")
 
-set(CMAKE_CXX_FLAGS "-std=c++11")
+add_compile_options(-std=c++11)
 
 if(WARNINGS)
   set(WARNINGS_CXX_FLAGS
