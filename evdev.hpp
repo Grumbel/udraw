@@ -30,6 +30,8 @@ private:
 
 public:
   Evdev() :
+    m_fd(),
+    m_user_dev(),
     ev_abs_bit(false),
     ev_rel_bit(false),
     ev_key_bit(false)
@@ -68,7 +70,7 @@ public:
 
   void send(uint16_t type, uint16_t code, int32_t value)
   {
-    struct input_event ev;      
+    struct input_event ev;
     memset(&ev, 0, sizeof(ev));
 
     gettimeofday(&ev.time, NULL);
@@ -86,7 +88,7 @@ public:
     }
 
     if (write(m_fd, &ev, sizeof(ev)) < 0)
-      throw std::runtime_error(std::string("uinput:send_button: ") + strerror(errno)); 
+      throw std::runtime_error(std::string("uinput:send_button: ") + strerror(errno));
 
     // sync: send(EV_SYN, SYN_REPORT, 0);
   }
@@ -94,7 +96,7 @@ public:
 public:
   void add_key(int code)
   {
-    if (!ev_key_bit) 
+    if (!ev_key_bit)
     {
       ev_key_bit = true;
       ioctl(m_fd, UI_SET_EVBIT, EV_KEY);
@@ -105,7 +107,7 @@ public:
 
   void add_rel(int code)
   {
-    if (!ev_rel_bit) 
+    if (!ev_rel_bit)
     {
       ev_rel_bit = true;
       ioctl(m_fd, UI_SET_EVBIT, EV_REL);
@@ -116,14 +118,14 @@ public:
 
   void add_abs(int code, int min, int max, int fuzz, int flat)
   {
-    if (!ev_abs_bit) 
+    if (!ev_abs_bit)
     {
       ev_abs_bit = true;
       ioctl(m_fd, UI_SET_EVBIT, EV_ABS);
     }
 
     m_user_dev.absmin[code] = min;
-    m_user_dev.absmax[code] = max; 
+    m_user_dev.absmax[code] = max;
     m_user_dev.absfuzz[code] = fuzz;
     m_user_dev.absflat[code] = flat;
 

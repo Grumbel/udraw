@@ -36,7 +36,7 @@
   // 0x80 - finger
   // 0x40 - pen
   // weird stuff when pinching (angle)
-  data[11]             
+  data[11]
 
   data[12]; // pinch distance
 
@@ -49,8 +49,8 @@ private:
   int m_len;
 
 public:
-  enum { 
-    PEN_MODE    = 0x40, 
+  enum {
+    PEN_MODE    = 0x40,
     FINGER_MODE = 0x80,
     PINCH_MODE
   };
@@ -64,7 +64,7 @@ public:
   {
     // pen: 3px resolution
     // finger: 1px resolution
-    return m_data[15] * 255 + m_data[17]; 
+    return m_data[15] * 255 + m_data[17];
   }
 
   int get_y() const

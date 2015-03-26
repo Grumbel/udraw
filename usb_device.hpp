@@ -23,9 +23,10 @@ private:
   struct usb_device*     dev;
   struct usb_dev_handle* handle;
 
-public: 
+public:
   USBDevice(struct usb_device* dev_) :
-  dev(dev_)
+    dev(dev_),
+    handle()
   {
     handle = usb_open(dev);
     if (!handle)
@@ -44,7 +45,7 @@ public:
     if (usb_clear_halt(handle, ep) != 0)
     {
       std::cout << "Failure to reset_ep: " << ep << std::endl;
-    }    
+    }
   }
 
   void reset()
@@ -120,17 +121,17 @@ public:
      uint16_t index;
      uint16_t length;
   */
-  int ctrl_msg(int requesttype, int request, 
+  int ctrl_msg(int requesttype, int request,
                int value, int index,
-               uint8_t* data, int size) 
+               uint8_t* data, int size)
   {
-    return usb_control_msg(handle, 
-                           requesttype,  request, 
+    return usb_control_msg(handle,
+                           requesttype,  request,
                            value,  index,
-                           (char*)data, size, 
+                           (char*)data, size,
                            0 /* timeout */);
   }
-  
+
   void print_info()
   {
     for(int i = 0; i < dev->descriptor.bNumConfigurations; ++i)
@@ -143,7 +144,7 @@ public:
         {
           for(int l = 0; l < dev->config[i].interface[j].altsetting[k].bNumEndpoints; ++l)
           {
-            std::cout << "    Endpoint: " 
+            std::cout << "    Endpoint: "
                       << int(dev->config[i].interface[j].altsetting[k].endpoint[l].bEndpointAddress & USB_ENDPOINT_ADDRESS_MASK)
                       << ((dev->config[i].interface[j].altsetting[k].endpoint[l].bEndpointAddress & USB_ENDPOINT_DIR_MASK) ? " (IN)" : " (OUT)")
                       << std::endl;
@@ -155,7 +156,7 @@ public:
 
   void listen(int endpoint, std::function<void (uint8_t* data, int)> callback)
   {
-    try 
+    try
     {
       bool this_quit = false;
       std::cout << "Reading from endpoint " << endpoint << std::endl;;
@@ -175,12 +176,16 @@ public:
         }
       }
 
-    } 
-    catch(std::exception& err) 
+    }
+    catch(std::exception& err)
     {
       std::cout << "Error: " << err.what() << std::endl;
     }
   }
+
+private:
+  USBDevice(const USBDevice&) = delete;
+  USBDevice& operator=(const USBDevice&) = delete;
 };
 
 

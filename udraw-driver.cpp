@@ -50,7 +50,7 @@ find_usb_device(uint16_t idVendor, uint16_t idProduct)
 
   for (struct usb_bus* bus = busses; bus; bus = bus->next)
   {
-    for (struct usb_device* dev = bus->devices; dev; dev = dev->next) 
+    for (struct usb_device* dev = bus->devices; dev; dev = dev->next)
     {
       if (dev->descriptor.idVendor  == idVendor &&
           dev->descriptor.idProduct == idProduct)
@@ -64,9 +64,9 @@ find_usb_device(uint16_t idVendor, uint16_t idProduct)
 
 void print_raw_data(std::ostream& out, uint8_t* data, int len)
 {
-  std::cout << "[" << len 
+  std::cout << "[" << len
             << "] ";
-      
+
   for(int i = 0; i < len; ++i)
   {
     std::cout << boost::format("[%d]%02x") % i % int(data[i]);
@@ -95,7 +95,7 @@ struct Options
 
 void print_help(const char* argv0)
 {
-  std::cout << "Usage: " << argv0 << "[OPTION]...\n" 
+  std::cout << "Usage: " << argv0 << "[OPTION]...\n"
             << "Basic driver for the PS3 uDraw graphic tablet\n"
             << "\n"
             << "Options:\n"
@@ -174,7 +174,7 @@ int main(int argc, char** argv)
   bool pinch_touching = false;
   bool scroll_wheel = false;
   int wheel_distance = 0;
-            
+
   if (dev)
   {
     std::unique_ptr<USBDevice> usbdev(new USBDevice(dev));
@@ -184,7 +184,7 @@ int main(int argc, char** argv)
     usbdev->claim_interface(0);
 
     Evdev evdev;
-    
+
     // init evdev
     if (opts.gamepad_mode)
     {
@@ -295,7 +295,7 @@ int main(int argc, char** argv)
              evdev.send(EV_ABS, ABS_Y, decoder.get_y());
              evdev.send(EV_ABS, ABS_PRESSURE, decoder.get_pressure());
              evdev.send(EV_KEY, BTN_TOOL_PEN, 1);
-             
+
              if (decoder.get_pressure() > 0)
              {
                evdev.send(EV_KEY, BTN_TOUCH, 1);
@@ -364,7 +364,7 @@ int main(int argc, char** argv)
            else
            {
              finger_touching = false;
-           }  
+           }
            evdev.send(EV_SYN, SYN_REPORT, 0);
          }
          else if (opts.accelerometer_mode)
@@ -408,7 +408,7 @@ int main(int argc, char** argv)
              acc_y_max = std::max(acc_y, acc_y_max);
              acc_z_max = std::max(acc_z, acc_z_max);
 
-             // acc_min -31  -33  -33 
+             // acc_min -31  -33  -33
              // acc_max  31   28   29
              // ~22 == 1g
 
@@ -418,7 +418,7 @@ int main(int argc, char** argv)
                acc_x_min % acc_y_min % acc_z_min %
                acc_x_max % acc_y_max % acc_z_max;
 
-             
+
              std::cout << std::endl;
            }
          }
@@ -427,7 +427,7 @@ int main(int argc, char** argv)
            print_raw_data(std::cout, data, size);
            std::cout << std::endl;
          }
-           
+
          if (false)
          {
            evdev.send(EV_KEY, BTN_RIGHT,  decoder.get_left());
