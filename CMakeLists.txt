@@ -20,7 +20,7 @@ project(udraw)
 option(WARNINGS "Switch on extra warnings" OFF)
 option(WERROR "Turn warnings into errors" OFF)
 
-add_compile_options(-std=c++11)
+add_compile_options(-std=c++0x)
 
 if(WARNINGS)
   set(WARNINGS_CXX_FLAGS
