@@ -17,7 +17,8 @@
 cmake_minimum_required(VERSION 3.0)
 project(udraw)
 
-set(WARNINGS 0 CACHE BOOL "Switch on extra warnings")
+option(WARNINGS "Switch on extra warnings" OFF)
+option(WERROR "Turn warnings into errors" OFF)
 
 add_compile_options(-std=c++11)
 
@@ -25,6 +26,11 @@ if(WARNINGS)
   set(WARNINGS_CXX_FLAGS
     -pedantic -Wall -Wextra -Wno-c++0x-compat -Wnon-virtual-dtor -Weffc++
     -Wconversion -Werror -Wshadow -Wcast-qual -Winit-self -Wno-unused-parameter)
+endif()
+
+if(WERROR)
+  set(WARNINGS_CXX_FLAGS ${WARNINGS_CXX_FLAGS}
+    -Werror)
 endif()
 
 find_package(Threads REQUIRED)
