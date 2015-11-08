@@ -118,6 +118,7 @@ public:
 
   bool get_start() const { return m_data[1] & 1; }
   bool get_select() const { return m_data[1] & 2; }
+  bool get_guide() const { return m_data[1] & 0x10; }
 };
 
 
