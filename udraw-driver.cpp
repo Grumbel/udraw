@@ -198,6 +198,7 @@ int main(int argc, char** argv)
 
       evdev.add_key(BTN_START);
       evdev.add_key(BTN_SELECT);
+      evdev.add_key(BTN_Z);
     }
     else if (opts.keyboard_mode)
     {
@@ -284,6 +285,7 @@ int main(int argc, char** argv)
 
            evdev.send(EV_KEY, BTN_START,  decoder.get_start());
            evdev.send(EV_KEY, BTN_SELECT, decoder.get_select());
+           evdev.send(EV_KEY, BTN_Z, decoder.get_guide());
 
            evdev.send(EV_SYN, SYN_REPORT, 0);
          }
