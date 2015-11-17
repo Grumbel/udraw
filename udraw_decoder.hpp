@@ -58,6 +58,12 @@ public:
   UDrawDecoder(uint8_t* data, int len) :
     m_data(data), m_len(len)
   {
+    if (m_len < 19)
+    {
+      std::ostringstream out;
+      out << "package size to small: " << m_len;
+      throw std::runtime_error(out.str());
+    }
   }
 
   int get_x() const
