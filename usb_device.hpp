@@ -40,14 +40,6 @@ public:
     usb_close(handle);
   }
 
-  void clear_halt(int ep)
-  {
-    if (usb_clear_halt(handle, ep) != 0)
-    {
-      std::cout << "Failure to reset_ep: " << ep << std::endl;
-    }
-  }
-
   void reset()
   {
     if (usb_reset(handle) != 0)
