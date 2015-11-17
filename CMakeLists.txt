@@ -17,6 +17,8 @@
 cmake_minimum_required(VERSION 3.0)
 project(udraw)
 
+include(GNUInstallDirs)
+
 option(WARNINGS "Switch on extra warnings" OFF)
 option(WERROR "Turn warnings into errors" OFF)
 
@@ -42,6 +44,9 @@ target_compile_options(udraw-driver PRIVATE ${WARNINGS_CXX_FLAGS})
 target_link_libraries(udraw-driver
   ${USB_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT})
+
+install(TARGETS udraw-driver
+  RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
 
 # EOF #
 
