@@ -24,6 +24,8 @@
 # https://github.com/SuperTux/supertux/blob/master/.travis.yml
 
 language: cpp
+dist: trusty
+sudo: required
 
 compiler:
   - gcc
@@ -33,25 +35,13 @@ matrix:
   fast_finish: true
 
 env:
-  global:
-    - CMAKE_VERSION=3.2.1
   matrix:
     - BUILD_TYPE="Debug"
     - BUILD_TYPE="Release"
 
 before_install:
-  - sudo apt-get update -qq
-  - sudo apt-get install build-essential libboost-dev pkg-config libusb-dev
-
-  # Current gcc that supports C++ 11 features
-  - sudo add-apt-repository ppa:ubuntu-toolchain-r/test -y
-  - sudo apt-get update -qq
-  - if [ "$CXX" = "g++" ]; then sudo apt-get install -qq g++-4.9; fi
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.9" CC="gcc-4.9"; fi
-
-  # CMake
-  - wget --no-check-certificate http://www.cmake.org/files/v3.2/cmake-$CMAKE_VERSION.tar.gz -O - | tar xz
-  - (cd cmake-$CMAKE_VERSION && cmake . && make -j3 && sudo make install)
+  - if [ "$CXX" == "clang++" ]; then export CXX="clang++-4.0" CC="clang-4.0"; fi
 
 script:
   - git clean -f
@@ -60,5 +50,17 @@ script:
   - cmake .. -DCMAKE_BUILD_TYPE=$BUILD_TYPE -DWARNINGS=ON -DWERROR=ON
   - make VERBOSE=1 -j3
   - sudo make install
+
+addons:
+  apt:
+    sources:
+    - ubuntu-toolchain-r-test
+    - llvm-toolchain-precise
+    packages:
+    - cmake
+    - build-essential
+    - libboost-dev
+    - pkg-config
+    - libusb-dev
 
 # EOF #
