@@ -57,8 +57,10 @@ addons:
     - ubuntu-toolchain-r-test
     - llvm-toolchain-precise
     packages:
-    - cmake
     - build-essential
+    - clang-4.0
+    - cmake
+    - g++-4.9
     - libboost-dev
     - pkg-config
     - libusb-dev
