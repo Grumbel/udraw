@@ -297,7 +297,7 @@ int main(int argc, char** argv)
              evdev.send(EV_ABS, ABS_PRESSURE, decoder.get_pressure());
              evdev.send(EV_KEY, BTN_TOOL_PEN, 1);
 
-             if (decoder.get_pressure() > 0)
+             if (decoder.get_pressure() > 5)
              {
                evdev.send(EV_KEY, BTN_TOUCH, 1);
              }

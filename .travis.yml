@@ -41,7 +41,7 @@ env:
 
 before_install:
   - if [ "$CXX" = "g++" ]; then export CXX="g++-4.9" CC="gcc-4.9"; fi
-  - if [ "$CXX" == "clang++" ]; then export CXX="clang++-4.0" CC="clang-4.0"; fi
+  - if [ "$CXX" == "clang++" ]; then export CXX="clang++-3.9" CC="clang-3.9"; fi
 
 script:
   - git clean -f
@@ -58,7 +58,7 @@ addons:
     - llvm-toolchain-precise
     packages:
     - build-essential
-    - clang-4.0
+    - clang-3.9
     - cmake
     - g++-4.9
     - libboost-dev
