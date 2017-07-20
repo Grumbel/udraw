@@ -58,7 +58,7 @@ addons:
     - llvm-toolchain-precise
     packages:
     - build-essential
-    - clang-4.0
+    - clang-3.9
     - cmake
     - g++-4.9
     - libboost-dev
