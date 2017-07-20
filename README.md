@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/lispparser/sexp-cpp.svg?branch=master)](https://travis-ci.org/lispparser/sexp-cpp)
+[![Build Status](https://travis-ci.org/Grumbel/udraw.svg?branch=master)](https://travis-ci.org/Grumbel/udraw)
 
 uDraw PS3 Linux Driver
 ======================
