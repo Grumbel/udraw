@@ -19,10 +19,12 @@ project(udraw)
 
 include(GNUInstallDirs)
 
+set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_EXTENSIONS OFF)
+
 option(WARNINGS "Switch on extra warnings" OFF)
 option(WERROR "Turn warnings into errors" OFF)
-
-add_compile_options(-std=c++0x)
 
 if(WARNINGS)
   set(WARNINGS_CXX_FLAGS
