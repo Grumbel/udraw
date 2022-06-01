@@ -141,6 +141,7 @@ void run(int argc, char** argv)
   USBDevice usbdev(dev);
   Evdev evdev;
   UDrawDriver driver(usbdev, evdev, opts);
+  driver.run();
 }
 
 } // namespace udraw

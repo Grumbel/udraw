@@ -51,231 +51,18 @@ UDrawDriver::UDrawDriver(USBDevice& usbdev, Evdev& evdev, Options const& opts) :
   m_evdev(evdev),
   m_opts(opts)
 {
+}
+
+void
+UDrawDriver::run()
+{
   init_evdev();
 
   m_usbdev.print_info();
   m_usbdev.detach_kernel_driver(0);
   m_usbdev.claim_interface(0);
 
-  m_usbdev.listen
-    (3,
-     [&](uint8_t* data, int size)
-     {
-       UDrawDecoder decoder(data, size);
-
-       if (m_opts.keyboard_mode)
-       {
-         evdev.send(EV_KEY, KEY_LEFT,  decoder.get_left());
-         evdev.send(EV_KEY, KEY_RIGHT, decoder.get_right());
-         evdev.send(EV_KEY, KEY_UP,    decoder.get_up());
-         evdev.send(EV_KEY, KEY_DOWN,  decoder.get_down());
-
-         evdev.send(EV_KEY, KEY_ENTER, decoder.get_cross());
-         evdev.send(EV_KEY, KEY_SPACE, decoder.get_circle());
-         evdev.send(EV_KEY, KEY_A, decoder.get_square());
-         evdev.send(EV_KEY, KEY_Z, decoder.get_triangle());
-
-         evdev.send(EV_KEY, KEY_ESC,  decoder.get_start());
-         evdev.send(EV_KEY, KEY_TAB, decoder.get_select());
-
-         evdev.send(EV_SYN, SYN_REPORT, 0);
-       }
-       else if (m_opts.gamepad_mode)
-       {
-         evdev.send(EV_ABS, ABS_X, -1 * decoder.get_left() + 1 * decoder.get_right());
-         evdev.send(EV_ABS, ABS_Y, -1 * decoder.get_up()   + 1 * decoder.get_down());
-
-         evdev.send(EV_KEY, BTN_A, decoder.get_cross());
-         evdev.send(EV_KEY, BTN_B, decoder.get_circle());
-         evdev.send(EV_KEY, BTN_X, decoder.get_square());
-         evdev.send(EV_KEY, BTN_Y, decoder.get_triangle());
-
-         evdev.send(EV_KEY, BTN_START,  decoder.get_start());
-         evdev.send(EV_KEY, BTN_SELECT, decoder.get_select());
-         evdev.send(EV_KEY, BTN_Z, decoder.get_guide());
-
-         evdev.send(EV_SYN, SYN_REPORT, 0);
-       }
-       else if (m_opts.tablet_mode)
-       {
-         if (decoder.get_mode() == UDrawDecoder::PEN_MODE)
-         {
-           evdev.send(EV_ABS, ABS_X, decoder.get_x());
-           evdev.send(EV_ABS, ABS_Y, decoder.get_y());
-           evdev.send(EV_ABS, ABS_PRESSURE, decoder.get_pressure());
-           evdev.send(EV_KEY, BTN_TOOL_PEN, 1);
-
-           if (decoder.get_pressure() > 5)
-           {
-             evdev.send(EV_KEY, BTN_TOUCH, 1);
-           }
-           else
-           {
-             evdev.send(EV_KEY, BTN_TOUCH, 0);
-           }
-
-           evdev.send(EV_SYN, SYN_REPORT, 0);
-         }
-         else
-         {
-           evdev.send(EV_KEY, BTN_TOOL_PEN, 0);
-           evdev.send(EV_SYN, SYN_REPORT, 0);
-         }
-       }
-       else if (m_opts.touchpad_mode)
-       {
-         evdev.send(EV_KEY, BTN_LEFT,  decoder.get_right());
-         evdev.send(EV_KEY, BTN_RIGHT, decoder.get_left());
-
-         if (decoder.get_mode() == UDrawDecoder::FINGER_MODE)
-         {
-           if (!finger_touching)
-           {
-             touch_pos_x = decoder.get_x();
-             touch_pos_y = decoder.get_y();
-             finger_touching = true;
-
-             if (touch_pos_x > 1800)
-             {
-               scroll_wheel = true;
-               wheel_distance = 0;
-             }
-             else
-             {
-               scroll_wheel = false;
-             }
-           }
-
-           if (scroll_wheel)
-           {
-             wheel_distance += (decoder.get_y() - touch_pos_y) / 10;
-
-             int rel = wheel_distance/10;
-             if (rel != 0)
-             {
-               evdev.send(EV_REL, REL_WHEEL, -rel);
-
-               wheel_distance -= rel;
-               touch_pos_x = decoder.get_x();
-               touch_pos_y = decoder.get_y();
-               //std::cout << rel << " " << wheel_distance << std::endl;
-             }
-           }
-           else
-           {
-             evdev.send(EV_REL, REL_X, decoder.get_x() - touch_pos_x);
-             evdev.send(EV_REL, REL_Y, decoder.get_y() - touch_pos_y);
-
-             touch_pos_x = decoder.get_x();
-             touch_pos_y = decoder.get_y();
-           }
-         }
-         else
-         {
-           finger_touching = false;
-         }
-         evdev.send(EV_SYN, SYN_REPORT, 0);
-       }
-       else if (m_opts.accelerometer_mode)
-       {
-         if (size != 27)
-         {
-           std::cerr << "unknown read size: " << size << std::endl;
-         }
-         else
-         {
-           //data[0];
-           int x = data[15] * 255 + data[17]; // x - pen: 3px resolution
-           int y = data[16] * 255 + data[18]; // y - finger: 1px resolution
-
-           if (data[11] == 0x00)
-           {
-             std::cout << "nothing";
-           }
-           else if (data[11] == 0x80)
-           {
-             std::cout << fmt::format("finger: x: {:4d} y: {:4d}", x, y);
-           }
-           else if (data[11] == 0x40)
-           {
-             std::cout << fmt::format("pen: x: {:4d} y: {:4d}  - pressure: {:3d}", x, y, (int(data[13]) - 0x70));
-           }
-           else
-           {
-             std::cout << fmt::format("pinch: x: {:4d) y: {:4d}  distance: {:4d}  orientation: {:02x}", x, y, int(data[12]), (int(data[11]) - 0xc0));
-           }
-
-           int acc_x = ((data[19] + data[20] * 255) - 512);
-           int acc_y = ((data[21] + data[22] * 255) - 512);
-           int acc_z = ((data[23] + data[24] * 255) - 512);
-
-           acc_x_min = std::min(acc_x, acc_x_min);
-           acc_y_min = std::min(acc_y, acc_y_min);
-           acc_z_min = std::min(acc_z, acc_z_min);
-
-           acc_x_max = std::max(acc_x, acc_x_max);
-           acc_y_max = std::max(acc_y, acc_y_max);
-           acc_z_max = std::max(acc_z, acc_z_max);
-
-           // acc_min -31  -33  -33
-           // acc_max  31   28   29
-           // ~22 == 1g
-
-           // accelerometer
-           std::cout << fmt::format("{:4d} {:4d} {:4d} - {:4d} {:4d} {:4d} - {:4d} {:4d} {:4d}",
-                                    acc_x, acc_y, acc_z,
-                                    acc_x_min, acc_y_min, acc_z_min,
-                                    acc_x_max, acc_y_max, acc_z_max);
-
-           std::cout << std::endl;
-         }
-       }
-       else
-       {
-         print_raw_data(std::cout, data, size);
-         std::cout << std::endl;
-       }
-
-       if (false)
-       {
-         evdev.send(EV_KEY, BTN_RIGHT,  decoder.get_left());
-         evdev.send(EV_KEY, BTN_MIDDLE, decoder.get_up());
-         evdev.send(EV_KEY, BTN_LEFT,   decoder.get_right());
-
-         evdev.send(EV_REL, REL_WHEEL, decoder.get_triangle() ? 1 : 0);
-         evdev.send(EV_REL, REL_WHEEL, decoder.get_cross() ? -1 : 0);
-
-         evdev.send(EV_KEY, KEY_BACK,    decoder.get_circle());
-         evdev.send(EV_KEY, KEY_FORWARD, decoder.get_square());
-
-         if (false)
-         {
-           // FIXME: does not work as is, needs throttling
-
-           if (decoder.get_mode() == UDrawDecoder::PINCH_MODE)
-           {
-             if (!pinch_touching)
-             {
-               touch_pos_x = decoder.get_x();
-               touch_pos_y = decoder.get_y();
-               pinch_touching = true;
-             }
-
-             evdev.send(EV_REL, REL_HWHEEL, decoder.get_x() - touch_pos_x);
-             evdev.send(EV_REL, REL_WHEEL,  decoder.get_y() - touch_pos_y);
-
-             touch_pos_x = decoder.get_x();
-             touch_pos_y = decoder.get_y();
-           }
-           else
-           {
-             pinch_touching = false;
-           }
-
-           evdev.send(EV_SYN, SYN_REPORT, 0);
-         }
-       }
-     });
+  m_usbdev.listen(3, [this](uint8_t* data, int size){ on_data(data, size); });
 }
 
 void
@@ -345,6 +132,225 @@ UDrawDriver::init_evdev()
   }
 
   m_evdev.finish();
+}
+
+void
+UDrawDriver::on_data(uint8_t const* data, int size)
+{
+  UDrawDecoder decoder(data, size);
+
+  if (m_opts.keyboard_mode)
+  {
+    m_evdev.send(EV_KEY, KEY_LEFT,  decoder.get_left());
+    m_evdev.send(EV_KEY, KEY_RIGHT, decoder.get_right());
+    m_evdev.send(EV_KEY, KEY_UP,    decoder.get_up());
+    m_evdev.send(EV_KEY, KEY_DOWN,  decoder.get_down());
+
+    m_evdev.send(EV_KEY, KEY_ENTER, decoder.get_cross());
+    m_evdev.send(EV_KEY, KEY_SPACE, decoder.get_circle());
+    m_evdev.send(EV_KEY, KEY_A, decoder.get_square());
+    m_evdev.send(EV_KEY, KEY_Z, decoder.get_triangle());
+
+    m_evdev.send(EV_KEY, KEY_ESC,  decoder.get_start());
+    m_evdev.send(EV_KEY, KEY_TAB, decoder.get_select());
+
+    m_evdev.send(EV_SYN, SYN_REPORT, 0);
+  }
+  else if (m_opts.gamepad_mode)
+  {
+    m_evdev.send(EV_ABS, ABS_X, -1 * decoder.get_left() + 1 * decoder.get_right());
+    m_evdev.send(EV_ABS, ABS_Y, -1 * decoder.get_up()   + 1 * decoder.get_down());
+
+    m_evdev.send(EV_KEY, BTN_A, decoder.get_cross());
+    m_evdev.send(EV_KEY, BTN_B, decoder.get_circle());
+    m_evdev.send(EV_KEY, BTN_X, decoder.get_square());
+    m_evdev.send(EV_KEY, BTN_Y, decoder.get_triangle());
+
+    m_evdev.send(EV_KEY, BTN_START,  decoder.get_start());
+    m_evdev.send(EV_KEY, BTN_SELECT, decoder.get_select());
+    m_evdev.send(EV_KEY, BTN_Z, decoder.get_guide());
+
+    m_evdev.send(EV_SYN, SYN_REPORT, 0);
+  }
+  else if (m_opts.tablet_mode)
+  {
+    if (decoder.get_mode() == UDrawDecoder::PEN_MODE)
+    {
+      m_evdev.send(EV_ABS, ABS_X, decoder.get_x());
+      m_evdev.send(EV_ABS, ABS_Y, decoder.get_y());
+      m_evdev.send(EV_ABS, ABS_PRESSURE, decoder.get_pressure());
+      m_evdev.send(EV_KEY, BTN_TOOL_PEN, 1);
+
+      if (decoder.get_pressure() > 5)
+      {
+        m_evdev.send(EV_KEY, BTN_TOUCH, 1);
+      }
+      else
+      {
+        m_evdev.send(EV_KEY, BTN_TOUCH, 0);
+      }
+
+      m_evdev.send(EV_SYN, SYN_REPORT, 0);
+    }
+    else
+    {
+      m_evdev.send(EV_KEY, BTN_TOOL_PEN, 0);
+      m_evdev.send(EV_SYN, SYN_REPORT, 0);
+    }
+  }
+  else if (m_opts.touchpad_mode)
+  {
+    m_evdev.send(EV_KEY, BTN_LEFT,  decoder.get_right());
+    m_evdev.send(EV_KEY, BTN_RIGHT, decoder.get_left());
+
+    if (decoder.get_mode() == UDrawDecoder::FINGER_MODE)
+    {
+      if (!finger_touching)
+      {
+        touch_pos_x = decoder.get_x();
+        touch_pos_y = decoder.get_y();
+        finger_touching = true;
+
+        if (touch_pos_x > 1800)
+        {
+          scroll_wheel = true;
+          wheel_distance = 0;
+        }
+        else
+        {
+          scroll_wheel = false;
+        }
+      }
+
+      if (scroll_wheel)
+      {
+        wheel_distance += (decoder.get_y() - touch_pos_y) / 10;
+
+        int rel = wheel_distance/10;
+        if (rel != 0)
+        {
+          m_evdev.send(EV_REL, REL_WHEEL, -rel);
+
+          wheel_distance -= rel;
+          touch_pos_x = decoder.get_x();
+          touch_pos_y = decoder.get_y();
+          //std::cout << rel << " " << wheel_distance << std::endl;
+        }
+      }
+      else
+      {
+        m_evdev.send(EV_REL, REL_X, decoder.get_x() - touch_pos_x);
+        m_evdev.send(EV_REL, REL_Y, decoder.get_y() - touch_pos_y);
+
+        touch_pos_x = decoder.get_x();
+        touch_pos_y = decoder.get_y();
+      }
+    }
+    else
+    {
+      finger_touching = false;
+    }
+    m_evdev.send(EV_SYN, SYN_REPORT, 0);
+  }
+  else if (m_opts.accelerometer_mode)
+  {
+    if (size != 27)
+    {
+      std::cerr << "unknown read size: " << size << std::endl;
+    }
+    else
+    {
+      //data[0];
+      int x = data[15] * 255 + data[17]; // x - pen: 3px resolution
+      int y = data[16] * 255 + data[18]; // y - finger: 1px resolution
+
+      if (data[11] == 0x00)
+      {
+        std::cout << "nothing";
+      }
+      else if (data[11] == 0x80)
+      {
+        std::cout << fmt::format("finger: x: {:4d} y: {:4d}", x, y);
+      }
+      else if (data[11] == 0x40)
+      {
+        std::cout << fmt::format("pen: x: {:4d} y: {:4d}  - pressure: {:3d}", x, y, (int(data[13]) - 0x70));
+      }
+      else
+      {
+        std::cout << fmt::format("pinch: x: {:4d) y: {:4d}  distance: {:4d}  orientation: {:02x}", x, y, int(data[12]), (int(data[11]) - 0xc0));
+      }
+
+      int acc_x = ((data[19] + data[20] * 255) - 512);
+      int acc_y = ((data[21] + data[22] * 255) - 512);
+      int acc_z = ((data[23] + data[24] * 255) - 512);
+
+      acc_x_min = std::min(acc_x, acc_x_min);
+      acc_y_min = std::min(acc_y, acc_y_min);
+      acc_z_min = std::min(acc_z, acc_z_min);
+
+      acc_x_max = std::max(acc_x, acc_x_max);
+      acc_y_max = std::max(acc_y, acc_y_max);
+      acc_z_max = std::max(acc_z, acc_z_max);
+
+      // acc_min -31  -33  -33
+      // acc_max  31   28   29
+      // ~22 == 1g
+
+      // accelerometer
+      std::cout << fmt::format("{:4d} {:4d} {:4d} - {:4d} {:4d} {:4d} - {:4d} {:4d} {:4d}",
+                               acc_x, acc_y, acc_z,
+                               acc_x_min, acc_y_min, acc_z_min,
+                               acc_x_max, acc_y_max, acc_z_max);
+
+      std::cout << std::endl;
+    }
+  }
+  else
+  {
+    print_raw_data(std::cout, data, size);
+    std::cout << std::endl;
+  }
+
+  if (false)
+  {
+    m_evdev.send(EV_KEY, BTN_RIGHT,  decoder.get_left());
+    m_evdev.send(EV_KEY, BTN_MIDDLE, decoder.get_up());
+    m_evdev.send(EV_KEY, BTN_LEFT,   decoder.get_right());
+
+    m_evdev.send(EV_REL, REL_WHEEL, decoder.get_triangle() ? 1 : 0);
+    m_evdev.send(EV_REL, REL_WHEEL, decoder.get_cross() ? -1 : 0);
+
+    m_evdev.send(EV_KEY, KEY_BACK,    decoder.get_circle());
+    m_evdev.send(EV_KEY, KEY_FORWARD, decoder.get_square());
+
+    if (false)
+    {
+      // FIXME: does not work as is, needs throttling
+
+      if (decoder.get_mode() == UDrawDecoder::PINCH_MODE)
+      {
+        if (!pinch_touching)
+        {
+          touch_pos_x = decoder.get_x();
+          touch_pos_y = decoder.get_y();
+          pinch_touching = true;
+        }
+
+        m_evdev.send(EV_REL, REL_HWHEEL, decoder.get_x() - touch_pos_x);
+        m_evdev.send(EV_REL, REL_WHEEL,  decoder.get_y() - touch_pos_y);
+
+        touch_pos_x = decoder.get_x();
+        touch_pos_y = decoder.get_y();
+      }
+      else
+      {
+        pinch_touching = false;
+      }
+
+      m_evdev.send(EV_SYN, SYN_REPORT, 0);
+    }
+  }
 }
 
 } // namespace udraw

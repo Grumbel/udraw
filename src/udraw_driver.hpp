@@ -19,6 +19,8 @@
 
 #include "fwd.hpp"
 
+#include <cstdint>
+
 namespace udraw {
 
 class UDrawDriver
@@ -26,8 +28,11 @@ class UDrawDriver
 public:
   UDrawDriver(USBDevice& usbdev, Evdev& evdev, Options const& opts);
 
+  void run();
+
 private:
   void init_evdev();
+  void on_data(uint8_t const* data, int size);
 
 private:
   USBDevice& m_usbdev;
