@@ -29,7 +29,9 @@ option(WERROR "Turn warnings into errors" OFF)
 if(WARNINGS)
   set(WARNINGS_CXX_FLAGS
     -pedantic -Wall -Wextra -Wno-c++0x-compat -Wnon-virtual-dtor -Weffc++
-    -Wconversion -Werror -Wshadow -Wcast-qual -Winit-self -Wno-unused-parameter)
+    -Wconversion -Werror -Wshadow -Wcast-qual -Winit-self -Wno-unused-parameter
+    -Wno-stringop-overread # produces bogus warnings
+    )
 endif()
 
 if(WERROR)
