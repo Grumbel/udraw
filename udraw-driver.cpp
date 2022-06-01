@@ -14,11 +14,9 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <boost/format.hpp>
 #include <memory>
 #include <stdio.h>
 #include <string.h>
-#include <boost/format.hpp>
 #include <signal.h>
 #include <usb.h>
 #include <sstream>
@@ -32,6 +30,8 @@
 #include <fcntl.h>
 #include <linux/input.h>
 #include <linux/uinput.h>
+
+#include <fmt/format.h>
 
 #include "usb_device.hpp"
 #include "evdev.hpp"
@@ -68,7 +68,7 @@ void print_raw_data(std::ostream& out, uint8_t* data, int len)
 
   for(int i = 0; i < len; ++i)
   {
-    std::cout << boost::format("[%d]%02x") % i % int(data[i]);
+    std::cout << fmt::format("[{:d}]{:02x}", i, int(data[i]));
     if (i != len-1)
       std::cout << " ";
   }
@@ -386,15 +386,15 @@ int main(int argc, char** argv)
              }
              else if (data[11] == 0x80)
              {
-               std::cout << boost::format("finger: x: %4d y: %4d") % x % y;
+               std::cout << fmt::format("finger: x: {:4d} y: {:4d}", x, y);
              }
              else if (data[11] == 0x40)
              {
-               std::cout << boost::format("pen: x: %4d y: %4d  - pressure: %3d") % x % y % (int(data[13]) - 0x70);
+               std::cout << fmt::format("pen: x: {:4d} y: {:4d}  - pressure: {:3d}", x, y, (int(data[13]) - 0x70));
              }
              else
              {
-               std::cout << boost::format("pinch: x: %4d y: %4d  distance: %4d  orientation: %02x") % x % y % int(data[12]) % (int(data[11]) - 0xc0);
+               std::cout << fmt::format("pinch: x: {:4d) y: {:4d}  distance: {:4d}  orientation: {:02x}", x, y, int(data[12]), (int(data[11]) - 0xc0));
              }
 
              int acc_x = ((data[19] + data[20] * 255) - 512);
@@ -414,11 +414,10 @@ int main(int argc, char** argv)
              // ~22 == 1g
 
              // accelerometer
-             std::cout << boost::format("%4d %4d %4d - %4d %4d %4d - %4d %4d %4d") %
-               acc_x % acc_y % acc_z %
-               acc_x_min % acc_y_min % acc_z_min %
-               acc_x_max % acc_y_max % acc_z_max;
-
+             std::cout << fmt::format("{:4d} {:4d} {:4d} - {:4d} {:4d} {:4d} - {:4d} {:4d} {:4d}",
+                                      acc_x, acc_y, acc_z,
+                                      acc_x_min, acc_y_min, acc_z_min,
+                                      acc_x_max, acc_y_max, acc_z_max);
 
              std::cout << std::endl;
            }

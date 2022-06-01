@@ -14,7 +14,7 @@ Requirements:
 * cmake
 * git
 * libusb
-* boost
+* fmt
 * g++
 
 

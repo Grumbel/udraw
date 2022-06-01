@@ -14,7 +14,7 @@
 # You should have received a copy of the GNU General Public License
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-cmake_minimum_required(VERSION 3.0)
+cmake_minimum_required(VERSION 3.6)
 project(udraw)
 
 include(GNUInstallDirs)
@@ -35,15 +35,17 @@ if(WERROR)
     -Werror)
 endif()
 
+find_package(fmt REQUIRED)
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
-pkg_search_module(USB REQUIRED libusb)
+pkg_search_module(LIBUSB REQUIRED libusb IMPORTED_TARGET)
 
 add_executable(udraw-driver udraw-driver.cpp)
 target_compile_options(udraw-driver PRIVATE ${WARNINGS_CXX_FLAGS})
 target_link_libraries(udraw-driver
-  ${USB_LIBRARIES}
-  ${CMAKE_THREAD_LIBS_INIT})
+  fmt::fmt
+  PkgConfig::LIBUSB
+  Threads::Threads)
 
 install(TARGETS udraw-driver
   RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR})
