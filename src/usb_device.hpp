@@ -21,6 +21,8 @@
 
 #include <usb.h>
 
+namespace udraw {
+
 class USBDevice
 {
 public:
@@ -56,6 +58,8 @@ private:
   USBDevice(const USBDevice&) = delete;
   USBDevice& operator=(const USBDevice&) = delete;
 };
+
+} // namespace udraw
 
 #endif
 

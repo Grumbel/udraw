@@ -39,6 +39,8 @@
 #include "udraw_driver.hpp"
 #include "usb_device.hpp"
 
+namespace udraw {
+
 class USBDevice;
 
 bool global_interrupt = false;
@@ -123,7 +125,7 @@ Options parse_args(int argc, char** argv)
   return opts;
 }
 
-int main(int argc, char** argv)
+void run(int argc, char** argv)
 {
   Options opts = parse_args(argc, argv);
 
@@ -133,15 +135,23 @@ int main(int argc, char** argv)
 
   struct usb_device* dev = find_usb_device(0x20d6, 0xcb17);
   if (!dev) {
-    std::cerr << "error: no udraw tablet found (20d6:cb17)" << std::endl;
-    return EXIT_FAILURE;
+    throw std::runtime_error("error: no udraw tablet found (20d6:cb17)");
   }
 
-  auto usbdev = std::make_unique<USBDevice>(dev);
+  USBDevice usbdev(dev);
   Evdev evdev;
-  UDrawDriver driver(*usbdev, evdev, opts);
+  UDrawDriver driver(usbdev, evdev, opts);
+}
 
-  return 0;
+} // namespace udraw
+
+int main(int argc, char** argv) try
+{
+  udraw::run(argc, argv);
+  return EXIT_SUCCESS;
+} catch (std::exception const& err) {
+  std::cerr << "error: " << err.what() << std::endl;
+  return EXIT_FAILURE;
 }
 
 /* EOF */

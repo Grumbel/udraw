@@ -19,6 +19,8 @@
 
 #include "fwd.hpp"
 
+namespace udraw {
+
 class UDrawDriver
 {
 public:
@@ -51,6 +53,8 @@ private:
   UDrawDriver(const UDrawDriver&) = delete;
   UDrawDriver& operator=(const UDrawDriver&) = delete;
 };
+
+} // namespace udraw
 
 #endif
 

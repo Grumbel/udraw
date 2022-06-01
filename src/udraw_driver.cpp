@@ -26,6 +26,8 @@
 #include "udraw_decoder.hpp"
 #include "usb_device.hpp"
 
+namespace udraw {
+
 namespace {
 
 void print_raw_data(std::ostream& out, uint8_t* data, int len)
@@ -55,7 +57,7 @@ UDrawDriver::UDrawDriver(USBDevice& usbdev, Evdev& evdev, Options const& opts) :
   m_usbdev.detach_kernel_driver(0);
   m_usbdev.claim_interface(0);
 
-    m_usbdev.listen
+  m_usbdev.listen
     (3,
      [&](uint8_t* data, int size)
      {
@@ -344,5 +346,7 @@ UDrawDriver::init_evdev()
 
   m_evdev.finish();
 }
+
+} // namespace udraw
 
 /* EOF */

@@ -19,6 +19,8 @@
 #include <iostream>
 #include <sstream>
 
+namespace udraw {
+
 USBDevice::USBDevice(struct usb_device* dev_) :
   dev(dev_),
   handle()
@@ -179,5 +181,7 @@ USBDevice::listen(int endpoint, std::function<void (uint8_t* data, int)> callbac
     std::cout << "Error: " << err.what() << std::endl;
   }
 }
+
+} // namespace udraw
 
 /* EOF */

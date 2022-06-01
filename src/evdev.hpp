@@ -28,6 +28,8 @@
 
 #include <string.h>
 
+namespace udraw {
+
 class Evdev
 {
 public:
@@ -47,6 +49,8 @@ private:
   bool ev_rel_bit;
   bool ev_key_bit;
 };
+
+} // namespace udraw
 
 #endif
 

@@ -17,9 +17,13 @@
 #ifndef HEADER_UDRAW_FWD_HPP
 #define HEADER_UDRAW_FWD_HPP
 
+namespace udraw {
+
 class Evdev;
 class USBDevice;
 class Options;
+
+} // namespace udraw
 
 #endif
 

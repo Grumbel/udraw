@@ -17,6 +17,8 @@
 #ifndef HEADER_UDRAW_OPTIONS_HPP
 #define HEADER_UDRAW_OPTIONS_HPP
 
+namespace udraw {
+
 struct Options
 {
   bool gamepad_mode;
@@ -33,6 +35,8 @@ struct Options
     accelerometer_mode(false)
   {}
 };
+
+} // namespace udraw
 
 #endif
 

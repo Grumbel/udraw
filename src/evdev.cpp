@@ -16,6 +16,8 @@
 
 #include "evdev.hpp"
 
+namespace udraw {
+
 Evdev::Evdev() :
   m_fd(),
   m_user_dev(),
@@ -122,5 +124,7 @@ Evdev::add_abs(int code, int min, int max, int fuzz, int flat)
 
   ioctl(m_fd, UI_SET_ABSBIT, code);
 }
+
+} // namespace udraw
 
 /* EOF */
