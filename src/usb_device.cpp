@@ -24,133 +24,133 @@ namespace udraw {
 USBDevice::USBDevice(struct usb_device* dev_) :
   dev(dev_),
   handle()
+{
+  handle = usb_open(dev);
+  if (!handle)
   {
-    handle = usb_open(dev);
-    if (!handle)
-    {
-      throw std::runtime_error("Error opening usb device");
-    }
+    throw std::runtime_error("Error opening usb device");
   }
+}
 
 USBDevice::~USBDevice()
-  {
-    usb_close(handle);
-  }
+{
+  usb_close(handle);
+}
 
 void
 USBDevice::reset()
+{
+  if (usb_reset(handle) != 0)
   {
-    if (usb_reset(handle) != 0)
+    std::cout << "Failure to reset" << std::endl;
+  }
+}
+
+void
+USBDevice::detach_kernel_driver(int iface)
+{
+  if (usb_detach_kernel_driver_np(handle, iface) < 0)
+  {
+    std::cerr << "couldn't detach interface " << iface << std::endl;
+  }
+}
+
+void
+USBDevice::claim_interface(int iface)
+{
+  if (usb_claim_interface(handle, iface) != 0)
+  {
+    std::ostringstream str;
+    str << "Couldn't claim interface " << iface;
+    throw std::runtime_error(str.str());
+  }
+}
+
+void
+USBDevice::release_interface(int iface)
+{
+  if (usb_release_interface(handle, iface) != 0)
+  {
+    std::ostringstream str;
+    str << "Couldn't release interface " << iface;
+    throw std::runtime_error(str.str());
+  }
+}
+
+void
+USBDevice::set_configuration(int configuration)
+{
+  if (usb_set_configuration(handle, configuration) != 0)
+  {
+    std::ostringstream str;
+    str << "Couldn't set configuration " << configuration;
+    throw std::runtime_error(str.str());
+  }
+}
+
+void
+USBDevice::set_altinterface(int interface)
+{
+  if (usb_set_altinterface(handle, interface) != 0)
+  {
+    std::ostringstream str;
+    str << "Couldn't set alternative interface " << interface;
+    throw std::runtime_error(str.str());
+  }
+}
+
+int
+USBDevice::read(int endpoint, uint8_t* data, int len)
+{
+  return usb_interrupt_read(handle, endpoint, reinterpret_cast<char*>(data), len, 0);
+}
+
+int
+USBDevice::write(int endpoint, uint8_t* data, int len)
+{
+  return usb_interrupt_write(handle, endpoint, reinterpret_cast<char*>(data), len, 0);
+}
+
+/* uint8_t  requesttype
+   uint8_t  request
+   uint16_t value;
+   uint16_t index;
+   uint16_t length;
+*/
+int
+USBDevice::ctrl_msg(int requesttype, int request,
+                    int value, int index,
+                    uint8_t* data, int size)
+{
+  return usb_control_msg(handle,
+                         requesttype,  request,
+                         value,  index,
+                         reinterpret_cast<char*>(data), size,
+                         0 /* timeout */);
+}
+
+void
+USBDevice::print_info()
+{
+  for(int i = 0; i < dev->descriptor.bNumConfigurations; ++i)
+  {
+    std::cout << "Configuration: " << i << std::endl;
+    for(int j = 0; j < dev->config[i].bNumInterfaces; ++j)
     {
-      std::cout << "Failure to reset" << std::endl;
-    }
-  }
-
-  void
-  USBDevice::detach_kernel_driver(int iface)
-  {
-    if (usb_detach_kernel_driver_np(handle, iface) < 0)
-    {
-      std::cerr << "couldn't detach interface " << iface << std::endl;
-    }
-  }
-
-  void
-  USBDevice::claim_interface(int iface)
-  {
-    if (usb_claim_interface(handle, iface) != 0)
-    {
-      std::ostringstream str;
-      str << "Couldn't claim interface " << iface;
-      throw std::runtime_error(str.str());
-    }
-  }
-
-  void
-  USBDevice::release_interface(int iface)
-  {
-    if (usb_release_interface(handle, iface) != 0)
-    {
-      std::ostringstream str;
-      str << "Couldn't release interface " << iface;
-      throw std::runtime_error(str.str());
-    }
-  }
-
-  void
-  USBDevice::set_configuration(int configuration)
-  {
-    if (usb_set_configuration(handle, configuration) != 0)
-    {
-      std::ostringstream str;
-      str << "Couldn't set configuration " << configuration;
-      throw std::runtime_error(str.str());
-    }
-  }
-
-  void
-  USBDevice::set_altinterface(int interface)
-  {
-    if (usb_set_altinterface(handle, interface) != 0)
-    {
-      std::ostringstream str;
-      str << "Couldn't set alternative interface " << interface;
-      throw std::runtime_error(str.str());
-    }
-  }
-
-  int
-  USBDevice::read(int endpoint, uint8_t* data, int len)
-  {
-    return usb_interrupt_read(handle, endpoint, reinterpret_cast<char*>(data), len, 0);
-  }
-
-  int
-  USBDevice::write(int endpoint, uint8_t* data, int len)
-  {
-    return usb_interrupt_write(handle, endpoint, reinterpret_cast<char*>(data), len, 0);
-  }
-
-  /* uint8_t  requesttype
-     uint8_t  request
-     uint16_t value;
-     uint16_t index;
-     uint16_t length;
-  */
-  int
-  USBDevice::ctrl_msg(int requesttype, int request,
-               int value, int index,
-               uint8_t* data, int size)
-  {
-    return usb_control_msg(handle,
-                           requesttype,  request,
-                           value,  index,
-                           reinterpret_cast<char*>(data), size,
-                           0 /* timeout */);
-  }
-
-  void
-  USBDevice::print_info()
-  {
-    for(int i = 0; i < dev->descriptor.bNumConfigurations; ++i)
-    {
-      std::cout << "Configuration: " << i << std::endl;
-      for(int j = 0; j < dev->config[i].bNumInterfaces; ++j)
+      std::cout << "  Interface " << j << ":" << std::endl;
+      for(int k = 0; k < dev->config[i].interface[j].num_altsetting; ++k)
       {
-        std::cout << "  Interface " << j << ":" << std::endl;
-        for(int k = 0; k < dev->config[i].interface[j].num_altsetting; ++k)
+        for(int l = 0; l < dev->config[i].interface[j].altsetting[k].bNumEndpoints; ++l)
         {
-          for(int l = 0; l < dev->config[i].interface[j].altsetting[k].bNumEndpoints; ++l)
-          {
-            std::cout << "    Endpoint: "
-                      << int(dev->config[i].interface[j].altsetting[k].endpoint[l].bEndpointAddress & USB_ENDPOINT_ADDRESS_MASK)
-                      << ((dev->config[i].interface[j].altsetting[k].endpoint[l].bEndpointAddress & USB_ENDPOINT_DIR_MASK) ? " (IN)" : " (OUT)")
-                      << std::endl;
-          }
+          std::cout << "    Endpoint: "
+                    << int(dev->config[i].interface[j].altsetting[k].endpoint[l].bEndpointAddress & USB_ENDPOINT_ADDRESS_MASK)
+                    << ((dev->config[i].interface[j].altsetting[k].endpoint[l].bEndpointAddress & USB_ENDPOINT_DIR_MASK) ? " (IN)" : " (OUT)")
+                    << std::endl;
         }
       }
     }
   }
+}
 
 void
 USBDevice::listen(int endpoint, std::function<void (uint8_t* data, int)> callback)
