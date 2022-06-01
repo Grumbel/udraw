@@ -102,13 +102,13 @@ USBDevice::reset()
   int
   USBDevice::read(int endpoint, uint8_t* data, int len)
   {
-    return usb_interrupt_read(handle, endpoint, (char*)data, len, 0);
+    return usb_interrupt_read(handle, endpoint, reinterpret_cast<char*>(data), len, 0);
   }
 
   int
   USBDevice::write(int endpoint, uint8_t* data, int len)
   {
-    return usb_interrupt_write(handle, endpoint, (char*)data, len, 0);
+    return usb_interrupt_write(handle, endpoint, reinterpret_cast<char*>(data), len, 0);
   }
 
   /* uint8_t  requesttype
@@ -125,7 +125,7 @@ USBDevice::reset()
     return usb_control_msg(handle,
                            requesttype,  request,
                            value,  index,
-                           (char*)data, size,
+                           reinterpret_cast<char*>(data), size,
                            0 /* timeout */);
   }
 

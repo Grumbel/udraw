@@ -17,27 +17,21 @@
 cmake_minimum_required(VERSION 3.6)
 project(udraw)
 
+set(TINYCMMC_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/external/tinycmmc/modules/")
+find_package(tinycmmc CONFIG)
+message(STATUS "tinycmmc module path: ${TINYCMMC_MODULE_PATH}")
+list(APPEND CMAKE_MODULE_PATH ${TINYCMMC_MODULE_PATH})
+
 include(GNUInstallDirs)
+include(MaximumWarnings)
 
 set(CMAKE_CXX_STANDARD 14)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(WARNINGS "Switch on extra warnings" OFF)
-option(WERROR "Turn warnings into errors" OFF)
-
-if(WARNINGS)
-  set(WARNINGS_CXX_FLAGS
-    -pedantic -Wall -Wextra -Wno-c++0x-compat -Wnon-virtual-dtor -Weffc++
-    -Wconversion -Werror -Wshadow -Wcast-qual -Winit-self -Wno-unused-parameter
-    -Wno-stringop-overread # produces bogus warnings
-    )
-endif()
-
-if(WERROR)
-  set(WARNINGS_CXX_FLAGS ${WARNINGS_CXX_FLAGS}
-    -Werror)
-endif()
+list(APPEND WARNINGS_CXX_FLAGS
+  -Wno-stringop-overread # produces bogus warnings
+  )
 
 find_package(fmt REQUIRED)
 find_package(Threads REQUIRED)

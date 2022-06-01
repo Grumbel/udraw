@@ -63,7 +63,7 @@ find_usb_device(uint16_t idVendor, uint16_t idProduct)
       }
     }
   }
-  return 0;
+  return nullptr;
 }
 
 } // namespace
