@@ -30,7 +30,7 @@ namespace udraw {
 
 namespace {
 
-void print_raw_data(std::ostream& out, uint8_t* data, int len)
+void print_raw_data(std::ostream& out, uint8_t const* data, int len)
 {
   std::cout << "[" << len
             << "] ";

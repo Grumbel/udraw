@@ -45,7 +45,7 @@
 class UDrawDecoder
 {
 private:
-  uint8_t* m_data;
+  uint8_t const* m_data;
   int m_len;
 
 public:
@@ -55,8 +55,9 @@ public:
     PINCH_MODE
   };
 
-  UDrawDecoder(uint8_t* data, int len) :
-    m_data(data), m_len(len)
+  UDrawDecoder(uint8_t const* data, int len) :
+    m_data(data),
+    m_len(len)
   {
     if (m_len < 19)
     {
