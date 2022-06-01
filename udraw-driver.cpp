@@ -158,6 +158,10 @@ int main(int argc, char** argv)
   usb_find_devices();
 
   struct usb_device* dev = find_usb_device(0x20d6, 0xcb17);
+  if (!dev) {
+    std::cerr << "error: no udraw tablet found (20d6:cb17)" << std::endl;
+    return EXIT_FAILURE;
+  }
 
   int acc_x_min = 0;
   int acc_y_min = 0;
@@ -174,9 +178,7 @@ int main(int argc, char** argv)
   bool scroll_wheel = false;
   int wheel_distance = 0;
 
-  if (dev)
-  {
-    std::unique_ptr<USBDevice> usbdev(new USBDevice(dev));
+  auto usbdev = std::make_unique<USBDevice>(dev);
 
     usbdev->print_info();
     usbdev->detach_kernel_driver(0);
@@ -468,7 +470,6 @@ int main(int argc, char** argv)
            }
          }
        });
-  }
 
   return 0;
 }
