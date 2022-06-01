@@ -1,5 +1,5 @@
 //  Linux driver for the uDraw graphic tablet
-//  Copyright (C) 2012 Ingo Ruhnke <grumbel@gmail.com>
+//  Copyright (C) 2012-2022 Ingo Ruhnke <grumbel@gmail.com>
 //
 //  This program is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -14,52 +14,19 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#include <memory>
-#include <stdio.h>
-#include <string.h>
-#include <signal.h>
-#include <usb.h>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <vector>
-#include <iostream>
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-#include <linux/input.h>
+#include "udraw_driver.hpp"
+
 #include <linux/uinput.h>
+#include <iostream>
 
 #include <fmt/format.h>
 
-#include "usb_device.hpp"
 #include "evdev.hpp"
+#include "options.hpp"
 #include "udraw_decoder.hpp"
+#include "usb_device.hpp"
 
-class USBDevice;
-
-void print_raw_data(std::ostream& out, uint8_t* data, int len);
-bool global_interrupt = false;
-
-struct usb_device*
-find_usb_device(uint16_t idVendor, uint16_t idProduct)
-{
-  struct usb_bus* busses = usb_get_busses();
-
-  for (struct usb_bus* bus = busses; bus; bus = bus->next)
-  {
-    for (struct usb_device* dev = bus->devices; dev; dev = dev->next)
-    {
-      if (dev->descriptor.idVendor  == idVendor &&
-          dev->descriptor.idProduct == idProduct)
-      {
-        return dev;
-      }
-    }
-  }
-  return 0;
-}
+namespace {
 
 void print_raw_data(std::ostream& out, uint8_t* data, int len)
 {
@@ -74,190 +41,27 @@ void print_raw_data(std::ostream& out, uint8_t* data, int len)
   }
 
 }
-
-struct Options
+
+} // namespace
+
+UDrawDriver::UDrawDriver(USBDevice& usbdev, Evdev& evdev, Options const& opts) :
+  m_usbdev(usbdev),
+  m_evdev(evdev),
+  m_opts(opts)
 {
-  bool gamepad_mode;
-  bool keyboard_mode;
-  bool touchpad_mode;
-  bool tablet_mode;
-  bool accelerometer_mode;
+  init_evdev();
 
-  Options() :
-    gamepad_mode(false),
-    keyboard_mode(false),
-    touchpad_mode(false),
-    tablet_mode(false),
-    accelerometer_mode(false)
-  {}
-};
+  m_usbdev.print_info();
+  m_usbdev.detach_kernel_driver(0);
+  m_usbdev.claim_interface(0);
 
-void print_help(const char* argv0)
-{
-  std::cout << "Usage: " << argv0 << "[OPTION]...\n"
-            << "Basic driver for the PS3 uDraw graphic tablet\n"
-            << "\n"
-            << "Options:\n"
-            << "  -h, --help  display this help\n"
-            << "  --touchpad  use the device as touchpad\n"
-            << "  --tablet    use the device as graphic tablet\n"
-            << "  --gamepad   use the device as gamepad\n"
-            << "  --keyboard  use the device as keyboard\n"
-            << "  --accelerometer  use the accelerometer\n"
-            << std::endl;
-}
-
-Options parse_args(int argc, char** argv)
-{
-  Options opts;
-
-  for(int i = 1; i < argc; ++i)
-  {
-    if (strcmp("--gamepad", argv[i]) == 0)
-    {
-      opts.gamepad_mode = true;
-    }
-    else if (strcmp("--keyboard", argv[i]) == 0)
-    {
-      opts.keyboard_mode = true;
-    }
-    else if (strcmp("--tablet", argv[i]) == 0)
-    {
-      opts.tablet_mode = true;
-    }
-    else if (strcmp("--touchpad", argv[i]) == 0)
-    {
-      opts.touchpad_mode = true;
-    }
-    else if (strcmp("--accelerometer", argv[i]) == 0)
-    {
-      opts.accelerometer_mode = true;
-    }
-    else if (strcmp("--help", argv[i]) == 0 ||
-             strcmp("-h", argv[i]) == 0)
-    {
-      print_help(argv[0]);
-      exit(EXIT_SUCCESS);
-    }
-    else
-    {
-      std::cerr << "unknown option: " << argv[i] << std::endl;
-      exit(EXIT_FAILURE);
-    }
-  }
-
-  return opts;
-}
-
-int main(int argc, char** argv)
-{
-  Options opts = parse_args(argc, argv);
-
-  usb_init();
-  usb_find_busses();
-  usb_find_devices();
-
-  struct usb_device* dev = find_usb_device(0x20d6, 0xcb17);
-  if (!dev) {
-    std::cerr << "error: no udraw tablet found (20d6:cb17)" << std::endl;
-    return EXIT_FAILURE;
-  }
-
-  int acc_x_min = 0;
-  int acc_y_min = 0;
-  int acc_z_min = 0;
-
-  int acc_x_max = 0;
-  int acc_y_max = 0;
-  int acc_z_max = 0;
-
-  int touch_pos_x = 0;
-  int touch_pos_y = 0;
-  bool finger_touching = false;
-  bool pinch_touching = false;
-  bool scroll_wheel = false;
-  int wheel_distance = 0;
-
-  auto usbdev = std::make_unique<USBDevice>(dev);
-
-  usbdev->print_info();
-  usbdev->detach_kernel_driver(0);
-  usbdev->claim_interface(0);
-
-  Evdev evdev;
-
-  // init evdev
-  if (opts.gamepad_mode)
-  {
-    evdev.add_abs(ABS_X, -1, 1, 0, 0);
-    evdev.add_abs(ABS_Y, -1, 1, 0, 0);
-
-    evdev.add_key(BTN_A);
-    evdev.add_key(BTN_B);
-    evdev.add_key(BTN_X);
-    evdev.add_key(BTN_Y);
-
-    evdev.add_key(BTN_START);
-    evdev.add_key(BTN_SELECT);
-    evdev.add_key(BTN_Z);
-  }
-  else if (opts.keyboard_mode)
-  {
-    evdev.add_key(KEY_LEFT);
-    evdev.add_key(KEY_RIGHT);
-    evdev.add_key(KEY_UP);
-    evdev.add_key(KEY_DOWN);
-
-    evdev.add_key(KEY_ENTER);
-    evdev.add_key(KEY_SPACE);
-    evdev.add_key(KEY_A);
-    evdev.add_key(KEY_Z);
-
-    evdev.add_key(KEY_ESC);
-    evdev.add_key(KEY_TAB);
-  }
-  else if (opts.tablet_mode)
-  {
-    evdev.add_abs(ABS_X, 0, 1913, 0, 0);
-    evdev.add_abs(ABS_Y, 0, 1076, 0, 0);
-    evdev.add_abs(ABS_PRESSURE, 0, 143, 0, 0);
-
-    evdev.add_key(BTN_TOUCH);
-    evdev.add_key(BTN_TOOL_PEN);
-
-    evdev.add_rel(REL_WHEEL);
-    evdev.add_rel(REL_HWHEEL);
-
-    evdev.add_rel(REL_X);
-    evdev.add_rel(REL_Y);
-  }
-  else if (opts.touchpad_mode)
-  {
-    evdev.add_key(BTN_LEFT);
-    evdev.add_key(BTN_RIGHT);
-    evdev.add_key(BTN_MIDDLE);
-
-    /*
-      add_key(KEY_FORWARD);
-      add_key(KEY_BACK);
-    */
-
-    evdev.add_rel(REL_WHEEL);
-    evdev.add_rel(REL_HWHEEL);
-
-    evdev.add_rel(REL_X);
-    evdev.add_rel(REL_Y);
-  }
-
-  evdev.finish();
-
-  usbdev->listen
+    m_usbdev.listen
     (3,
      [&](uint8_t* data, int size)
      {
        UDrawDecoder decoder(data, size);
 
-       if (opts.keyboard_mode)
+       if (m_opts.keyboard_mode)
        {
          evdev.send(EV_KEY, KEY_LEFT,  decoder.get_left());
          evdev.send(EV_KEY, KEY_RIGHT, decoder.get_right());
@@ -274,7 +78,7 @@ int main(int argc, char** argv)
 
          evdev.send(EV_SYN, SYN_REPORT, 0);
        }
-       else if (opts.gamepad_mode)
+       else if (m_opts.gamepad_mode)
        {
          evdev.send(EV_ABS, ABS_X, -1 * decoder.get_left() + 1 * decoder.get_right());
          evdev.send(EV_ABS, ABS_Y, -1 * decoder.get_up()   + 1 * decoder.get_down());
@@ -290,7 +94,7 @@ int main(int argc, char** argv)
 
          evdev.send(EV_SYN, SYN_REPORT, 0);
        }
-       else if (opts.tablet_mode)
+       else if (m_opts.tablet_mode)
        {
          if (decoder.get_mode() == UDrawDecoder::PEN_MODE)
          {
@@ -316,7 +120,7 @@ int main(int argc, char** argv)
            evdev.send(EV_SYN, SYN_REPORT, 0);
          }
        }
-       else if (opts.touchpad_mode)
+       else if (m_opts.touchpad_mode)
        {
          evdev.send(EV_KEY, BTN_LEFT,  decoder.get_right());
          evdev.send(EV_KEY, BTN_RIGHT, decoder.get_left());
@@ -370,7 +174,7 @@ int main(int argc, char** argv)
          }
          evdev.send(EV_SYN, SYN_REPORT, 0);
        }
-       else if (opts.accelerometer_mode)
+       else if (m_opts.accelerometer_mode)
        {
          if (size != 27)
          {
@@ -470,8 +274,75 @@ int main(int argc, char** argv)
          }
        }
      });
+}
 
-  return 0;
+void
+UDrawDriver::init_evdev()
+{
+  // init evdev
+  if (m_opts.gamepad_mode)
+  {
+    m_evdev.add_abs(ABS_X, -1, 1, 0, 0);
+    m_evdev.add_abs(ABS_Y, -1, 1, 0, 0);
+
+    m_evdev.add_key(BTN_A);
+    m_evdev.add_key(BTN_B);
+    m_evdev.add_key(BTN_X);
+    m_evdev.add_key(BTN_Y);
+
+    m_evdev.add_key(BTN_START);
+    m_evdev.add_key(BTN_SELECT);
+    m_evdev.add_key(BTN_Z);
+  }
+  else if (m_opts.keyboard_mode)
+  {
+    m_evdev.add_key(KEY_LEFT);
+    m_evdev.add_key(KEY_RIGHT);
+    m_evdev.add_key(KEY_UP);
+    m_evdev.add_key(KEY_DOWN);
+
+    m_evdev.add_key(KEY_ENTER);
+    m_evdev.add_key(KEY_SPACE);
+    m_evdev.add_key(KEY_A);
+    m_evdev.add_key(KEY_Z);
+
+    m_evdev.add_key(KEY_ESC);
+    m_evdev.add_key(KEY_TAB);
+  }
+  else if (m_opts.tablet_mode)
+  {
+    m_evdev.add_abs(ABS_X, 0, 1913, 0, 0);
+    m_evdev.add_abs(ABS_Y, 0, 1076, 0, 0);
+    m_evdev.add_abs(ABS_PRESSURE, 0, 143, 0, 0);
+
+    m_evdev.add_key(BTN_TOUCH);
+    m_evdev.add_key(BTN_TOOL_PEN);
+
+    m_evdev.add_rel(REL_WHEEL);
+    m_evdev.add_rel(REL_HWHEEL);
+
+    m_evdev.add_rel(REL_X);
+    m_evdev.add_rel(REL_Y);
+  }
+  else if (m_opts.touchpad_mode)
+  {
+    m_evdev.add_key(BTN_LEFT);
+    m_evdev.add_key(BTN_RIGHT);
+    m_evdev.add_key(BTN_MIDDLE);
+
+    /*
+      add_key(KEY_FORWARD);
+      add_key(KEY_BACK);
+    */
+
+    m_evdev.add_rel(REL_WHEEL);
+    m_evdev.add_rel(REL_HWHEEL);
+
+    m_evdev.add_rel(REL_X);
+    m_evdev.add_rel(REL_Y);
+  }
+
+  m_evdev.finish();
 }
 
 /* EOF */

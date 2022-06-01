@@ -44,7 +44,8 @@ find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_search_module(LIBUSB REQUIRED libusb IMPORTED_TARGET)
 
-add_executable(udraw-driver src/udraw-driver.cpp)
+file(GLOB UDRAW_SOURCES_CXX src/*.cpp)
+add_executable(udraw-driver ${UDRAW_SOURCES_CXX})
 target_compile_options(udraw-driver PRIVATE ${WARNINGS_CXX_FLAGS})
 target_link_libraries(udraw-driver
   fmt::fmt

@@ -14,38 +14,24 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef HEADER_EVDEV_HPP
-#define HEADER_EVDEV_HPP
+#ifndef HEADER_UDRAW_OPTIONS_HPP
+#define HEADER_UDRAW_OPTIONS_HPP
 
-#include <sstream>
-
-#include <linux/uinput.h>
-
-#include <unistd.h>
-#include <sys/types.h>
-#include <sys/stat.h>
-#include <fcntl.h>
-
-#include <string.h>
-
-class Evdev
+struct Options
 {
-public:
-  Evdev();
+  bool gamepad_mode;
+  bool keyboard_mode;
+  bool touchpad_mode;
+  bool tablet_mode;
+  bool accelerometer_mode;
 
-  void finish();
-  void send(uint16_t type, uint16_t code, int32_t value);
-
-  void add_key(int code);
-  void add_rel(int code);
-  void add_abs(int code, int min, int max, int fuzz, int flat);
-
-private:
-  int m_fd;
-  uinput_user_dev m_user_dev;
-  bool ev_abs_bit;
-  bool ev_rel_bit;
-  bool ev_key_bit;
+  Options() :
+    gamepad_mode(false),
+    keyboard_mode(false),
+    touchpad_mode(false),
+    tablet_mode(false),
+    accelerometer_mode(false)
+  {}
 };
 
 #endif
