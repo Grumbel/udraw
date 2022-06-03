@@ -17,6 +17,12 @@
 #ifndef HEADER_UDRAW_DECODER_HPP
 #define HEADER_UDRAW_DECODER_HPP
 
+#include <iosfwd>
+#include <cstdint>
+#include <stdexcept>
+
+#include <fmt/format.h>
+
 /*
   data[7]; // right
   data[8]; // left
@@ -57,11 +63,23 @@ public:
     m_data(data),
     m_len(len)
   {
-    if (m_len < 19)
-    {
-      std::ostringstream out;
-      out << "package size to small: " << m_len;
-      throw std::runtime_error(out.str());
+    if (m_len < 19) {
+      throw std::runtime_error(fmt::format("package size to small: {}", m_len));
+    }
+  }
+
+  Mode mode() const
+  {
+    int m = (m_data[11] & 0b11000000) >> 6;
+
+    if (m == 3) {
+      return Mode::PINCH;
+    } else if (m == 1) {
+      return Mode::PEN;
+    } else if (m == 2) {
+      return Mode::FINGER;
+    } else {
+      return Mode::UNKNOWN;
     }
   }
 
@@ -70,21 +88,24 @@ public:
   int x() const { return m_data[15] * 255 + m_data[17]; }
   int y() const { return m_data[16] * 255 + m_data[18]; }
 
-  int pressure() const { return m_data[13] - 0x70; }
-  int orientation() const { return m_data[11] - 0xc0; }
+  /** Pressure is registered all the time, even if fingers are used or
+      when the pen isn't on the table, maximum value is 255,
+      flips 0x71/0x72 without touch */
+  int pressure() const { return m_data[13] - 0x71; }
+  int max_pressure() const { return 142; }
 
-  Mode mode() const
-  {
-    if (0xc0 <= m_data[11] && m_data[11] <= 253) {
-      return Mode::PINCH;
-    } else if (m_data[11] == 0x40) {
-      return Mode::PEN;
-    } else if (m_data[11] == 0x80) {
-      return Mode::FINGER;
-    } else {
-      return Mode::UNKNOWN;
-    }
-  }
+  /** first two bits seem to be for the two fingers, precision is poor
+   more data hiding in 12 */
+  int orientation() const { return m_data[11] & 0b00111111; }
+  int max_orientation() const { return 63; }
+
+  int pinch_distance() const { return m_data[12]; }
+  int max_pinch_distance() const { return 255; }
+
+  /* values from -32 to 31 */
+  int accel_x() const { return ((m_data[20] << 8) | m_data[19]) - 512; };
+  int accel_y() const { return ((m_data[22] << 8) | m_data[21]) - 512; };
+  int accel_z() const { return ((m_data[24] << 8) | m_data[23]) - 512; };
 
   bool up() const { return m_data[9]; }
   bool down() const { return m_data[10]; }
@@ -104,6 +125,8 @@ private:
   uint8_t const* m_data;
   size_t m_len;
 };
+
+std::ostream& operator<<(std::ostream& os, UDrawDecoder const& decoder);
 
 #endif
 
