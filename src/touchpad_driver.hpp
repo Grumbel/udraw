@@ -19,6 +19,8 @@
 
 #include "driver.hpp"
 
+#include <chrono>
+
 #include "fwd.hpp"
 
 namespace udraw {
@@ -35,12 +37,15 @@ public:
 private:
   Evdev& m_evdev;
 
-  int m_touch_pos_x = 0;
-  int m_touch_pos_y = 0;
-  bool m_finger_touching = false;
-  bool m_pinch_touching = false;
-  bool m_scroll_wheel = false;
-  int m_wheel_distance = 0;
+  int m_touchdown_pos_x;
+  int m_touchdown_pos_y;
+  int m_touch_pos_x;
+  int m_touch_pos_y;
+  bool m_finger_touching;
+  bool m_pinch_touching;
+  bool m_scroll_wheel;
+  int m_wheel_distance;
+  std::chrono::steady_clock::time_point m_touch_time;
 
 private:
   TouchpadDriver(const TouchpadDriver&) = delete;

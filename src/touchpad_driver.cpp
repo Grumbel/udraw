@@ -16,13 +16,26 @@
 
 #include "touchpad_driver.hpp"
 
+#include <cmath>
+
+#include <logmich/log.hpp>
+
 #include "udraw_decoder.hpp"
 #include "evdev.hpp"
 
 namespace udraw {
 
 TouchpadDriver::TouchpadDriver(Evdev& evdev) :
-  m_evdev(evdev)
+  m_evdev(evdev),
+  m_touchdown_pos_x(0),
+  m_touchdown_pos_y(0),
+  m_touch_pos_x(0),
+  m_touch_pos_y(0),
+  m_finger_touching(false),
+  m_pinch_touching(false),
+  m_scroll_wheel(false),
+  m_wheel_distance(0),
+  m_touch_time()
 {
 }
 
@@ -64,9 +77,14 @@ TouchpadDriver::receive_data(uint8_t const* data, size_t size)
   {
     if (!m_finger_touching)
     {
+      m_finger_touching = true;
+      m_touchdown_pos_x = decoder.x();
+      m_touchdown_pos_y = decoder.y();
+
       m_touch_pos_x = decoder.x();
       m_touch_pos_y = decoder.y();
-      m_finger_touching = true;
+
+      m_touch_time = std::chrono::steady_clock::now();
 
       if (m_touch_pos_x < 120 || m_touch_pos_x > 1800)
       {
@@ -104,6 +122,29 @@ TouchpadDriver::receive_data(uint8_t const* data, size_t size)
   }
   else
   {
+    if (m_finger_touching) {
+      std::chrono::steady_clock::time_point new_touch_time = std::chrono::steady_clock::now();
+      auto const click_duration_msec = std::chrono::duration_cast<std::chrono::milliseconds>(new_touch_time - m_touch_time).count();
+
+      log_debug("click duration: {:4} msec - offset: {:4} {:4}",
+                click_duration_msec,
+                std::abs(m_touchdown_pos_x - m_touch_pos_x),
+                std::abs(m_touchdown_pos_y - m_touch_pos_y));
+
+      int const click_duration_threshold_msec = 150;
+      if (click_duration_msec < click_duration_threshold_msec) {
+        int const threshold = 16;
+        if (std::abs(m_touch_pos_x - m_touchdown_pos_x) < threshold &&
+            std::abs(m_touch_pos_y - m_touchdown_pos_y) < threshold)
+        {
+          log_debug("sending click");
+          m_evdev.send(EV_KEY, BTN_LEFT, 1);
+          m_evdev.send(EV_SYN, SYN_REPORT, 0);
+          m_evdev.send(EV_KEY, BTN_LEFT, 0);
+        }
+      }
+    }
+
     m_finger_touching = false;
   }
   m_evdev.send(EV_SYN, SYN_REPORT, 0);
