@@ -21,18 +21,19 @@ namespace udraw {
 
 struct Options
 {
-  bool gamepad_mode;
-  bool keyboard_mode;
-  bool touchpad_mode;
-  bool tablet_mode;
-  bool accelerometer_mode;
+  enum class Mode {
+    TEST,
+    RAW,
+    GAMEPAD,
+    KEYBOARD,
+    TOUCHPAD,
+    TABLET,
+    ACCELEROMETER
+  };
 
+  Mode mode;
   Options() :
-    gamepad_mode(false),
-    keyboard_mode(false),
-    touchpad_mode(false),
-    tablet_mode(false),
-    accelerometer_mode(false)
+    mode(Mode::TEST)
   {}
 };
 

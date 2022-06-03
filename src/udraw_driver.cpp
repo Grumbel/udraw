@@ -38,7 +38,8 @@ void print_raw_data(std::ostream& out, uint8_t const* data, size_t len)
 
   for(size_t i = 0; i < len; ++i)
   {
-    out << fmt::format("[{:d}]{:02x}", i, int(data[i]));
+    //out << fmt::format("[{:d}]{:02x}", i, int(data[i]));
+    out << fmt::format("[{:d}]{:08b}", i, int(data[i]));
     if (i != len-1)
       out << " ";
   }
@@ -72,7 +73,7 @@ void
 UDrawDriver::init_evdev()
 {
   // init evdev
-  if (m_opts.gamepad_mode)
+  if (m_opts.mode == Options::Mode::GAMEPAD)
   {
     m_evdev.add_abs(ABS_X, -1, 1, 0, 0);
     m_evdev.add_abs(ABS_Y, -1, 1, 0, 0);
@@ -86,7 +87,7 @@ UDrawDriver::init_evdev()
     m_evdev.add_key(BTN_SELECT);
     m_evdev.add_key(BTN_Z);
   }
-  else if (m_opts.keyboard_mode)
+  else if (m_opts.mode == Options::Mode::KEYBOARD)
   {
     m_evdev.add_key(KEY_LEFT);
     m_evdev.add_key(KEY_RIGHT);
@@ -101,7 +102,7 @@ UDrawDriver::init_evdev()
     m_evdev.add_key(KEY_ESC);
     m_evdev.add_key(KEY_TAB);
   }
-  else if (m_opts.tablet_mode)
+  else if (m_opts.mode == Options::Mode::TABLET)
   {
     m_evdev.add_abs(ABS_X, 0, 1913, 0, 0);
     m_evdev.add_abs(ABS_Y, 0, 1076, 0, 0);
@@ -116,7 +117,7 @@ UDrawDriver::init_evdev()
     m_evdev.add_rel(REL_X);
     m_evdev.add_rel(REL_Y);
   }
-  else if (m_opts.touchpad_mode)
+  else if (m_opts.mode == Options::Mode::TOUCHPAD)
   {
     m_evdev.add_key(BTN_LEFT);
     m_evdev.add_key(BTN_RIGHT);
@@ -142,7 +143,7 @@ UDrawDriver::on_data(uint8_t const* data, size_t size)
 {
   UDrawDecoder decoder(data, size);
 
-  if (m_opts.keyboard_mode)
+  if (m_opts.mode == Options::Mode::KEYBOARD)
   {
     m_evdev.send(EV_KEY, KEY_LEFT,  decoder.left());
     m_evdev.send(EV_KEY, KEY_RIGHT, decoder.right());
@@ -159,7 +160,7 @@ UDrawDriver::on_data(uint8_t const* data, size_t size)
 
     m_evdev.send(EV_SYN, SYN_REPORT, 0);
   }
-  else if (m_opts.gamepad_mode)
+  else if (m_opts.mode == Options::Mode::GAMEPAD)
   {
     m_evdev.send(EV_ABS, ABS_X, -1 * decoder.left() + 1 * decoder.right());
     m_evdev.send(EV_ABS, ABS_Y, -1 * decoder.up()   + 1 * decoder.down());
@@ -175,7 +176,7 @@ UDrawDriver::on_data(uint8_t const* data, size_t size)
 
     m_evdev.send(EV_SYN, SYN_REPORT, 0);
   }
-  else if (m_opts.tablet_mode)
+  else if (m_opts.mode == Options::Mode::TABLET)
   {
     if (decoder.mode() == UDrawDecoder::Mode::PEN)
     {
@@ -201,7 +202,7 @@ UDrawDriver::on_data(uint8_t const* data, size_t size)
       m_evdev.send(EV_SYN, SYN_REPORT, 0);
     }
   }
-  else if (m_opts.touchpad_mode)
+  else if (m_opts.mode == Options::Mode::TOUCHPAD)
   {
     m_evdev.send(EV_KEY, BTN_LEFT,  decoder.right());
     m_evdev.send(EV_KEY, BTN_RIGHT, decoder.left());
@@ -254,7 +255,7 @@ UDrawDriver::on_data(uint8_t const* data, size_t size)
     }
     m_evdev.send(EV_SYN, SYN_REPORT, 0);
   }
-  else if (m_opts.accelerometer_mode)
+  else if (m_opts.mode == Options::Mode::ACCELEROMETER)
   {
     if (size != 27)
     {
@@ -308,7 +309,11 @@ UDrawDriver::on_data(uint8_t const* data, size_t size)
       std::cout << std::endl;
     }
   }
-  else
+  else if (m_opts.mode == Options::Mode::TEST)
+  {
+    std::cout << decoder << std::endl;
+  }
+  else if (m_opts.mode == Options::Mode::RAW)
   {
     print_raw_data(std::cout, data, size);
     std::cout << std::endl;
