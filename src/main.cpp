@@ -55,14 +55,16 @@ void print_help(const char* argv0)
             << "Basic driver for the PS3 uDraw graphic tablet\n"
             << "\n"
             << "Options:\n"
-            << "  -h, --help  display this help\n"
-            << "  --test      pretty print data (default)\n"
-            << "  --raw       print raw data\n"
-            << "  --touchpad  use the device as touchpad\n"
-            << "  --tablet    use the device as graphic tablet\n"
-            << "  --gamepad   use the device as gamepad\n"
-            << "  --keyboard  use the device as keyboard\n"
-            << "  --accelerometer  use the accelerometer\n"
+            << "  -h, --help     display this help\n"
+            << "  -v, --verbose  be more verbose\n"
+            << "\n"
+            << "Modes:\n"
+            << "  --test         pretty print data (default)\n"
+            << "  --raw          print raw data\n"
+            << "  --touchpad     use the device as touchpad\n"
+            << "  --tablet       use the device as graphic tablet\n"
+            << "  --gamepad      use the device as gamepad\n"
+            << "  --keyboard     use the device as keyboard\n"
             << std::endl;
 }
 
@@ -84,8 +86,6 @@ Options parse_args(int argc, char** argv)
       opts.mode = Options::Mode::TABLET;
     } else if (strcmp("--touchpad", argv[i]) == 0) {
       opts.mode = Options::Mode::TOUCHPAD;
-    } else if (strcmp("--accelerometer", argv[i]) == 0){
-      opts.mode = Options::Mode::ACCELEROMETER;
     } else if (strcmp("--verbose", argv[i]) == 0 ||
                strcmp("-v", argv[i]) == 0) {
       opts.verbose = true;

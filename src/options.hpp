@@ -28,7 +28,6 @@ struct Options
     KEYBOARD,
     TOUCHPAD,
     TABLET,
-    ACCELEROMETER
   };
 
   bool verbose = false;

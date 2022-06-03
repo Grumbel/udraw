@@ -255,60 +255,6 @@ UDrawDriver::on_data(uint8_t const* data, size_t size)
     }
     m_evdev.send(EV_SYN, SYN_REPORT, 0);
   }
-  else if (m_opts.mode == Options::Mode::ACCELEROMETER)
-  {
-    if (size != 27)
-    {
-      log_error("unknown read size: {}", size);
-    }
-    else
-    {
-      //data[0];
-      int x = data[15] * 255 + data[17]; // x - pen: 3px resolution
-      int y = data[16] * 255 + data[18]; // y - finger: 1px resolution
-
-      if (data[11] == 0x00)
-      {
-        log_debug("nothing");
-      }
-      else if (data[11] == 0x80)
-      {
-        log_debug("finger: x: {:4d} y: {:4d}", x, y);
-      }
-      else if (data[11] == 0x40)
-      {
-        log_debug("pen: x: {:4d} y: {:4d}  - pressure: {:3d}", x, y, (int(data[13]) - 0x70));
-      }
-      else
-      {
-        log_debug("pinch: x: {:4d) y: {:4d}  distance: {:4d}  orientation: {:02x}", x, y, int(data[12]), (int(data[11]) - 0xc0));
-      }
-
-      int acc_x = ((data[19] + data[20] * 255) - 512);
-      int acc_y = ((data[21] + data[22] * 255) - 512);
-      int acc_z = ((data[23] + data[24] * 255) - 512);
-
-      acc_x_min = std::min(acc_x, acc_x_min);
-      acc_y_min = std::min(acc_y, acc_y_min);
-      acc_z_min = std::min(acc_z, acc_z_min);
-
-      acc_x_max = std::max(acc_x, acc_x_max);
-      acc_y_max = std::max(acc_y, acc_y_max);
-      acc_z_max = std::max(acc_z, acc_z_max);
-
-      // acc_min -31  -33  -33
-      // acc_max  31   28   29
-      // ~22 == 1g
-
-      // accelerometer
-      log_debug("{:4d} {:4d} {:4d} - {:4d} {:4d} {:4d} - {:4d} {:4d} {:4d}",
-                acc_x, acc_y, acc_z,
-                acc_x_min, acc_y_min, acc_z_min,
-                acc_x_max, acc_y_max, acc_z_max);
-
-      std::cout << std::endl;
-    }
-  }
   else if (m_opts.mode == Options::Mode::TEST)
   {
     std::cout << decoder << std::endl;

@@ -40,14 +40,6 @@ private:
   Evdev& m_evdev;
   Options const& m_opts;
 
-  int acc_x_min = 0;
-  int acc_y_min = 0;
-  int acc_z_min = 0;
-
-  int acc_x_max = 0;
-  int acc_y_max = 0;
-  int acc_z_max = 0;
-
   int touch_pos_x = 0;
   int touch_pos_y = 0;
   bool finger_touching = false;
