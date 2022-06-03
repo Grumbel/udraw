@@ -6,9 +6,14 @@
     tinycmmc.url = "github:grumbel/tinycmmc";
     tinycmmc.inputs.nixpkgs.follows = "nixpkgs";
     tinycmmc.inputs.flake-utils.follows = "flake-utils";
+
+    logmich.url = "github:logmich/logmich";
+    logmich.inputs.nixpkgs.follows = "nixpkgs";
+    logmich.inputs.flake-utils.follows = "flake-utils";
+    logmich.inputs.tinycmmc.follows = "tinycmmc";
   };
 
-  outputs = { self, nixpkgs, flake-utils, tinycmmc }:
+  outputs = { self, nixpkgs, flake-utils, tinycmmc, logmich }:
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
@@ -27,7 +32,11 @@
               fmt
             ] ++ [
               tinycmmc.defaultPackage.${system}
+              logmich.defaultPackage.${system}
             ];
+            meta = {
+              mainProgram = "udraw-driver";
+            };
            };
         };
         defaultPackage = packages.udraw;

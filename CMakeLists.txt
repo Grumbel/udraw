@@ -25,7 +25,7 @@ list(APPEND CMAKE_MODULE_PATH ${TINYCMMC_MODULE_PATH})
 include(GNUInstallDirs)
 include(MaximumWarnings)
 
-set(CMAKE_CXX_STANDARD 14)
+set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
@@ -38,11 +38,20 @@ find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_search_module(LIBUSB REQUIRED libusb-1.0 IMPORTED_TARGET)
 
+function(build_dependencies)
+  find_package(logmich QUIET)
+  if(NOT TARGET logmich::logmich)
+    add_subdirectory(external/logmich/ EXCLUDE_FROM_ALL)
+  endif()
+endfunction()
+build_dependencies()
+
 file(GLOB UDRAW_SOURCES_CXX src/*.cpp)
 add_executable(udraw-driver ${UDRAW_SOURCES_CXX})
 target_compile_options(udraw-driver PRIVATE ${WARNINGS_CXX_FLAGS})
 target_link_libraries(udraw-driver
   fmt::fmt
+  logmich::logmich
   PkgConfig::LIBUSB
   Threads::Threads)
 

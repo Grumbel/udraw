@@ -20,6 +20,7 @@
 #include <iostream>
 
 #include <fmt/format.h>
+#include <logmich/log.hpp>
 
 #include "evdev.hpp"
 #include "options.hpp"
@@ -32,14 +33,14 @@ namespace {
 
 void print_raw_data(std::ostream& out, uint8_t const* data, int len)
 {
-  std::cout << "[" << len
+  out << "[" << len
             << "] ";
 
   for(int i = 0; i < len; ++i)
   {
-    std::cout << fmt::format("[{:d}]{:02x}", i, int(data[i]));
+    out << fmt::format("[{:d}]{:02x}", i, int(data[i]));
     if (i != len-1)
-      std::cout << " ";
+      out << " ";
   }
 
 }
@@ -58,7 +59,7 @@ UDrawDriver::run()
 {
   init_evdev();
 
-  m_usbdev.print_info();
+  m_usbdev.print_info(std::cout);
   m_usbdev.detach_kernel_driver(0);
   m_usbdev.claim_interface(0);
 
@@ -137,6 +138,13 @@ UDrawDriver::init_evdev()
 void
 UDrawDriver::on_data(uint8_t const* data, int size)
 {
+  /*
+  if (size < 19) {
+    log_error("short read, ignoring");
+    return;
+  }
+  */
+
   UDrawDecoder decoder(data, size);
 
   if (m_opts.keyboard_mode)
@@ -234,7 +242,6 @@ UDrawDriver::on_data(uint8_t const* data, int size)
           wheel_distance -= rel;
           touch_pos_x = decoder.get_x();
           touch_pos_y = decoder.get_y();
-          //std::cout << rel << " " << wheel_distance << std::endl;
         }
       }
       else
@@ -256,7 +263,7 @@ UDrawDriver::on_data(uint8_t const* data, int size)
   {
     if (size != 27)
     {
-      std::cerr << "unknown read size: " << size << std::endl;
+      log_error("unknown read size: {}", size);
     }
     else
     {
@@ -266,19 +273,19 @@ UDrawDriver::on_data(uint8_t const* data, int size)
 
       if (data[11] == 0x00)
       {
-        std::cout << "nothing";
+        log_debug("nothing");
       }
       else if (data[11] == 0x80)
       {
-        std::cout << fmt::format("finger: x: {:4d} y: {:4d}", x, y);
+        log_debug("finger: x: {:4d} y: {:4d}", x, y);
       }
       else if (data[11] == 0x40)
       {
-        std::cout << fmt::format("pen: x: {:4d} y: {:4d}  - pressure: {:3d}", x, y, (int(data[13]) - 0x70));
+        log_debug("pen: x: {:4d} y: {:4d}  - pressure: {:3d}", x, y, (int(data[13]) - 0x70));
       }
       else
       {
-        std::cout << fmt::format("pinch: x: {:4d) y: {:4d}  distance: {:4d}  orientation: {:02x}", x, y, int(data[12]), (int(data[11]) - 0xc0));
+        log_debug("pinch: x: {:4d) y: {:4d}  distance: {:4d}  orientation: {:02x}", x, y, int(data[12]), (int(data[11]) - 0xc0));
       }
 
       int acc_x = ((data[19] + data[20] * 255) - 512);
@@ -298,10 +305,10 @@ UDrawDriver::on_data(uint8_t const* data, int size)
       // ~22 == 1g
 
       // accelerometer
-      std::cout << fmt::format("{:4d} {:4d} {:4d} - {:4d} {:4d} {:4d} - {:4d} {:4d} {:4d}",
-                               acc_x, acc_y, acc_z,
-                               acc_x_min, acc_y_min, acc_z_min,
-                               acc_x_max, acc_y_max, acc_z_max);
+      log_debug("{:4d} {:4d} {:4d} - {:4d} {:4d} {:4d} - {:4d} {:4d} {:4d}",
+                acc_x, acc_y, acc_z,
+                acc_x_min, acc_y_min, acc_z_min,
+                acc_x_max, acc_y_max, acc_z_max);
 
       std::cout << std::endl;
     }

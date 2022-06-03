@@ -16,10 +16,11 @@
 
 #include "usb_device.hpp"
 
-#include <iostream>
+#include <ostream>
 #include <sstream>
 
 #include <fmt/format.h>
+#include <logmich/log.hpp>
 
 namespace udraw {
 
@@ -39,7 +40,7 @@ USBDevice::reset()
 {
   int err = libusb_reset_device(m_handle);
   if (err != LIBUSB_SUCCESS) {
-    std::cerr << "Failure to reset:" << libusb_strerror(err) << std::endl;
+    log_error("Failure to reset: {}", libusb_strerror(err));
   }
 }
 
@@ -48,7 +49,7 @@ USBDevice::detach_kernel_driver(int iface)
 {
   int err = libusb_detach_kernel_driver(m_handle, iface);
   if (err != LIBUSB_SUCCESS) {
-    std::cerr << "couldn't detach interface " << iface << std::endl;
+    log_error("couldn't detach interface {}", iface);
   }
 }
 
@@ -57,9 +58,7 @@ USBDevice::claim_interface(int iface)
 {
   int err = libusb_claim_interface(m_handle, iface);
   if (err != LIBUSB_SUCCESS) {
-    std::ostringstream str;
-    str << "Couldn't claim interface " << iface;
-    throw std::runtime_error(str.str());
+    throw std::runtime_error(fmt::format("Couldn't claim interface {}", iface));
   }
 }
 
@@ -96,7 +95,7 @@ USBDevice::read(int endpoint, uint8_t* data, int len)
                                       0);
 
   if (transfered != len) {
-    std::cerr << fmt::format("USBDevice::read(): short read: expected {} got {}", len, transfered);
+    log_warn("USBDevice::read(): short read: expected {} got {}", len, transfered);
   }
 
   return err;
@@ -133,23 +132,23 @@ USBDevice::ctrl_msg(int requesttype, int request,
 }
 
 void
-USBDevice::print_info()
+USBDevice::print_info(std::ostream& out)
 {
 #if 0
   for(int i = 0; i < dev->descriptor.bNumConfigurations; ++i)
   {
-    std::cout << "Configuration: " << i << std::endl;
+    out << "Configuration: " << i << std::endl;
     for(int j = 0; j < dev->config[i].bNumInterfaces; ++j)
     {
-      std::cout << "  Interface " << j << ":" << std::endl;
+      out << "  Interface " << j << ":" << std::endl;
       for(int k = 0; k < dev->config[i].interface[j].num_altsetting; ++k)
       {
         for(int l = 0; l < dev->config[i].interface[j].altsetting[k].bNumEndpoints; ++l)
         {
-          std::cout << "    Endpoint: "
-                    << int(dev->config[i].interface[j].altsetting[k].endpoint[l].bEndpointAddress & USB_ENDPOINT_ADDRESS_MASK)
-                    << ((dev->config[i].interface[j].altsetting[k].endpoint[l].bEndpointAddress & USB_ENDPOINT_DIR_MASK) ? " (IN)" : " (OUT)")
-                    << std::endl;
+          out << "    Endpoint: "
+              << int(dev->config[i].interface[j].altsetting[k].endpoint[l].bEndpointAddress & USB_ENDPOINT_ADDRESS_MASK)
+              << ((dev->config[i].interface[j].altsetting[k].endpoint[l].bEndpointAddress & USB_ENDPOINT_DIR_MASK) ? " (IN)" : " (OUT)")
+              << std::endl;
         }
       }
     }
@@ -163,27 +162,24 @@ USBDevice::listen(int endpoint, std::function<void (uint8_t* data, int)> callbac
   try
   {
     bool this_quit = false;
-    std::cout << "Reading from endpoint " << endpoint << std::endl;;
+    log_debug("Reading from endpoint {}", endpoint);
     while(!this_quit)
     {
-      uint8_t data[8192];
-      int ret = read(endpoint, data, sizeof(data));
-      if (ret < 0)
-      {
-        std::cerr << "USBError: " << libusb_error_name(ret) << "\n" << libusb_strerror(ret) << std::endl;
-        std::cerr << "Shutting down" << std::endl;
+      uint8_t data[1024];
+      int err = read(endpoint, data, sizeof(data));
+      if (err != LIBUSB_SUCCESS) {
+        log_error("USBError: {}:\n{}", libusb_error_name(err), libusb_strerror(err));
+        log_error("Shutting down");
         this_quit = true;
-      }
-      else
-      {
-        callback(data, ret);
+      } else {
+        callback(data, err);
       }
     }
 
   }
   catch(std::exception& err)
   {
-    std::cout << "Error: " << err.what() << std::endl;
+    log_error("Error: {}", err.what());
   }
 }
 

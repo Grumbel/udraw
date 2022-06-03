@@ -15,6 +15,32 @@
         "type": "github"
       }
     },
+    "logmich": {
+      "inputs": {
+        "flake-utils": [
+          "flake-utils"
+        ],
+        "nixpkgs": [
+          "nixpkgs"
+        ],
+        "tinycmmc": [
+          "tinycmmc"
+        ]
+      },
+      "locked": {
+        "lastModified": 1653991001,
+        "narHash": "sha256-JWlI7nJykeXPkeq4zdUOvcScMnp386UW3tyRQgkxMtk=",
+        "owner": "logmich",
+        "repo": "logmich",
+        "rev": "866b33191bc9378191519b0342ebb1da66142ac2",
+        "type": "github"
+      },
+      "original": {
+        "owner": "logmich",
+        "repo": "logmich",
+        "type": "github"
+      }
+    },
     "nixpkgs": {
       "locked": {
         "lastModified": 1654005557,
@@ -34,6 +60,7 @@
     "root": {
       "inputs": {
         "flake-utils": "flake-utils",
+        "logmich": "logmich",
         "nixpkgs": "nixpkgs",
         "tinycmmc": "tinycmmc"
       }

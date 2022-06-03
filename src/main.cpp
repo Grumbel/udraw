@@ -32,6 +32,7 @@
 #include <linux/uinput.h>
 
 #include <fmt/format.h>
+#include <logmich/log.hpp>
 
 #include "evdev.hpp"
 #include "options.hpp"
@@ -94,8 +95,7 @@ Options parse_args(int argc, char** argv)
     }
     else
     {
-      std::cerr << "unknown option: " << argv[i] << std::endl;
-      exit(EXIT_FAILURE);
+      throw std::runtime_error(fmt::format("unknown option: {}", argv[i]));
     }
   }
 
@@ -132,7 +132,7 @@ int main(int argc, char** argv) try
   udraw::run(argc, argv);
   return EXIT_SUCCESS;
 } catch (std::exception const& err) {
-  std::cerr << "error: " << err.what() << std::endl;
+  log_error("exception: {}", err.what());
   return EXIT_FAILURE;
 }
 

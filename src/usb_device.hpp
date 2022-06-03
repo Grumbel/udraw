@@ -18,6 +18,7 @@
 #define HEADER_USB_DEVICE_HPP
 
 #include <functional>
+#include <iosfwd>
 
 #include <libusb.h>
 
@@ -46,7 +47,7 @@ public:
   int ctrl_msg(int requesttype, int request,
                int value, int index,
                uint8_t* data, int size);
-  void print_info();
+  void print_info(std::ostream& out);
   void listen(int endpoint, std::function<void (uint8_t* data, int)> callback);
 
 private:
