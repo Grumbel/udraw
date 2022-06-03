@@ -14,15 +14,31 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef HEADER_UDRAW_FWD_HPP
-#define HEADER_UDRAW_FWD_HPP
+#ifndef HEADER_GAMEPAD_DRIVER_HPP
+#define HEADER_GAMEPAD_DRIVER_HPP
+
+#include "driver.hpp"
+
+#include "fwd.hpp"
 
 namespace udraw {
 
-class Driver;
-class Evdev;
-class Options;
-class USBDevice;
+class GamepadDriver : public Driver
+{
+public:
+  GamepadDriver(Evdev& evdev);
+  ~GamepadDriver() override;
+
+  void init() override;
+  void receive_data(uint8_t const* data, size_t size) override;
+
+private:
+  Evdev& m_evdev;
+
+public:
+  GamepadDriver(const GamepadDriver&) = delete;
+  GamepadDriver& operator=(const GamepadDriver&) = delete;
+};
 
 } // namespace udraw
 

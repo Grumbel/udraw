@@ -14,15 +14,27 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef HEADER_UDRAW_FWD_HPP
-#define HEADER_UDRAW_FWD_HPP
+#ifndef HEADER_DRIVER_HPP
+#define HEADER_DRIVER_HPP
+
+#include <cstdint>
+#include <cstddef>
 
 namespace udraw {
 
-class Driver;
-class Evdev;
-class Options;
-class USBDevice;
+class Driver
+{
+public:
+  Driver() {}
+  virtual ~Driver() {}
+
+  virtual void init() = 0;
+  virtual void receive_data(uint8_t const* data, size_t size) = 0;
+
+private:
+  Driver(const Driver&) = delete;
+  Driver& operator=(const Driver&) = delete;
+};
 
 } // namespace udraw
 

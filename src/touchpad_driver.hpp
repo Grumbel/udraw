@@ -14,15 +14,38 @@
 //  You should have received a copy of the GNU General Public License
 //  along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
-#ifndef HEADER_UDRAW_FWD_HPP
-#define HEADER_UDRAW_FWD_HPP
+#ifndef HEADER_TOUCHPAD_DRIVER_HPP
+#define HEADER_TOUCHPAD_DRIVER_HPP
+
+#include "driver.hpp"
+
+#include "fwd.hpp"
 
 namespace udraw {
 
-class Driver;
-class Evdev;
-class Options;
-class USBDevice;
+class TouchpadDriver : public Driver
+{
+public:
+  TouchpadDriver(Evdev& evdev);
+  ~TouchpadDriver() override;
+
+  void init() override;
+  void receive_data(uint8_t const* data, size_t size) override;
+
+private:
+  Evdev& m_evdev;
+
+  int m_touch_pos_x = 0;
+  int m_touch_pos_y = 0;
+  bool m_finger_touching = false;
+  bool m_pinch_touching = false;
+  bool m_scroll_wheel = false;
+  int m_wheel_distance = 0;
+
+private:
+  TouchpadDriver(const TouchpadDriver&) = delete;
+  TouchpadDriver& operator=(const TouchpadDriver&) = delete;
+};
 
 } // namespace udraw
 

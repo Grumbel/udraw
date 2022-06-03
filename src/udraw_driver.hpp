@@ -17,10 +17,11 @@
 #ifndef HEADER_UDRAW_DRIVER_HPP
 #define HEADER_UDRAW_DRIVER_HPP
 
-#include "fwd.hpp"
-
 #include <cstddef>
 #include <cstdint>
+#include <memory>
+
+#include "fwd.hpp"
 
 namespace udraw {
 
@@ -28,11 +29,11 @@ class UDrawDriver
 {
 public:
   UDrawDriver(USBDevice& usbdev, Evdev& evdev, Options const& opts);
+  ~UDrawDriver();
 
   void run();
 
 private:
-  void init_evdev();
   void on_data(uint8_t const* data, size_t size);
 
 private:
@@ -40,12 +41,7 @@ private:
   Evdev& m_evdev;
   Options const& m_opts;
 
-  int m_touch_pos_x = 0;
-  int m_touch_pos_y = 0;
-  bool m_finger_touching = false;
-  bool m_pinch_touching = false;
-  bool m_scroll_wheel = false;
-  int m_wheel_distance = 0;
+  std::unique_ptr<Driver> m_driver;
 
 private:
   UDrawDriver(const UDrawDriver&) = delete;
