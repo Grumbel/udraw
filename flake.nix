@@ -23,8 +23,7 @@
               pkg-config
             ];
             buildInputs = with pkgs; [
-              # libusb1
-              libusb-compat-0_1
+              libusb
               fmt
             ] ++ [
               tinycmmc.defaultPackage.${system}

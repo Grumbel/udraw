@@ -18,7 +18,7 @@
 #include <stdio.h>
 #include <string.h>
 #include <signal.h>
-#include <usb.h>
+#include <libusb.h>
 #include <sstream>
 #include <stdexcept>
 #include <string>
@@ -44,29 +44,6 @@ namespace udraw {
 class USBDevice;
 
 bool global_interrupt = false;
-
-namespace {
-
-struct usb_device*
-find_usb_device(uint16_t idVendor, uint16_t idProduct)
-{
-  struct usb_bus* busses = usb_get_busses();
-
-  for (struct usb_bus* bus = busses; bus; bus = bus->next)
-  {
-    for (struct usb_device* dev = bus->devices; dev; dev = dev->next)
-    {
-      if (dev->descriptor.idVendor  == idVendor &&
-          dev->descriptor.idProduct == idProduct)
-      {
-        return dev;
-      }
-    }
-  }
-  return nullptr;
-}
-
-} // namespace
 
 void print_help(const char* argv0)
 {
@@ -129,19 +106,23 @@ void run(int argc, char** argv)
 {
   Options opts = parse_args(argc, argv);
 
-  usb_init();
-  usb_find_busses();
-  usb_find_devices();
+  libusb_context* usb_ctx;
+  int err = libusb_init(&usb_ctx);
+  if (err != LIBUSB_SUCCESS) {
+    throw std::runtime_error(libusb_strerror(err));
+  }
 
-  struct usb_device* dev = find_usb_device(0x20d6, 0xcb17);
-  if (!dev) {
+  struct libusb_device_handle* handle = libusb_open_device_with_vid_pid(usb_ctx, 0x20d6, 0xcb17);
+  if (!handle) {
     throw std::runtime_error("error: no udraw tablet found (20d6:cb17)");
   }
 
-  USBDevice usbdev(dev);
+  USBDevice usbdev(usb_ctx, handle);
   Evdev evdev;
   UDrawDriver driver(usbdev, evdev, opts);
   driver.run();
+
+  libusb_exit(usb_ctx);
 }
 
 } // namespace udraw

@@ -36,7 +36,7 @@ list(APPEND WARNINGS_CXX_FLAGS
 find_package(fmt REQUIRED)
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
-pkg_search_module(LIBUSB REQUIRED libusb IMPORTED_TARGET)
+pkg_search_module(LIBUSB REQUIRED libusb-1.0 IMPORTED_TARGET)
 
 file(GLOB UDRAW_SOURCES_CXX src/*.cpp)
 add_executable(udraw-driver ${UDRAW_SOURCES_CXX})

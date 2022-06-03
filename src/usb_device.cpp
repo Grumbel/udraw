@@ -19,38 +19,35 @@
 #include <iostream>
 #include <sstream>
 
+#include <fmt/format.h>
+
 namespace udraw {
 
-USBDevice::USBDevice(struct usb_device* dev_) :
-  dev(dev_),
-  handle()
+USBDevice::USBDevice(libusb_context* ctx, libusb_device_handle* handle) :
+  m_ctx(ctx),
+  m_handle(handle)
 {
-  handle = usb_open(dev);
-  if (!handle)
-  {
-    throw std::runtime_error("Error opening usb device");
-  }
 }
 
 USBDevice::~USBDevice()
 {
-  usb_close(handle);
+  libusb_close(m_handle);
 }
 
 void
 USBDevice::reset()
 {
-  if (usb_reset(handle) != 0)
-  {
-    std::cout << "Failure to reset" << std::endl;
+  int err = libusb_reset_device(m_handle);
+  if (err != LIBUSB_SUCCESS) {
+    std::cerr << "Failure to reset:" << libusb_strerror(err) << std::endl;
   }
 }
 
 void
 USBDevice::detach_kernel_driver(int iface)
 {
-  if (usb_detach_kernel_driver_np(handle, iface) < 0)
-  {
+  int err = libusb_detach_kernel_driver(m_handle, iface);
+  if (err != LIBUSB_SUCCESS) {
     std::cerr << "couldn't detach interface " << iface << std::endl;
   }
 }
@@ -58,8 +55,8 @@ USBDevice::detach_kernel_driver(int iface)
 void
 USBDevice::claim_interface(int iface)
 {
-  if (usb_claim_interface(handle, iface) != 0)
-  {
+  int err = libusb_claim_interface(m_handle, iface);
+  if (err != LIBUSB_SUCCESS) {
     std::ostringstream str;
     str << "Couldn't claim interface " << iface;
     throw std::runtime_error(str.str());
@@ -69,8 +66,8 @@ USBDevice::claim_interface(int iface)
 void
 USBDevice::release_interface(int iface)
 {
-  if (usb_release_interface(handle, iface) != 0)
-  {
+  int err = libusb_release_interface(m_handle, iface);
+  if (err != LIBUSB_SUCCESS) {
     std::ostringstream str;
     str << "Couldn't release interface " << iface;
     throw std::runtime_error(str.str());
@@ -80,21 +77,10 @@ USBDevice::release_interface(int iface)
 void
 USBDevice::set_configuration(int configuration)
 {
-  if (usb_set_configuration(handle, configuration) != 0)
-  {
+  int err = libusb_set_configuration(m_handle, configuration);
+  if (err != LIBUSB_SUCCESS) {
     std::ostringstream str;
     str << "Couldn't set configuration " << configuration;
-    throw std::runtime_error(str.str());
-  }
-}
-
-void
-USBDevice::set_altinterface(int interface)
-{
-  if (usb_set_altinterface(handle, interface) != 0)
-  {
-    std::ostringstream str;
-    str << "Couldn't set alternative interface " << interface;
     throw std::runtime_error(str.str());
   }
 }
@@ -102,13 +88,28 @@ USBDevice::set_altinterface(int interface)
 int
 USBDevice::read(int endpoint, uint8_t* data, int len)
 {
-  return usb_interrupt_read(handle, endpoint, reinterpret_cast<char*>(data), len, 0);
+  int transfered = 0;
+  int err = libusb_interrupt_transfer(m_handle,
+                                      static_cast<unsigned char>(endpoint) | LIBUSB_ENDPOINT_IN,
+                                      data,len,
+                                      &transfered,
+                                      0);
+
+  if (transfered != len) {
+    std::cerr << fmt::format("USBDevice::read(): short read: expected {} got {}", len, transfered);
+  }
+
+  return err;
 }
 
 int
 USBDevice::write(int endpoint, uint8_t* data, int len)
 {
-  return usb_interrupt_write(handle, endpoint, reinterpret_cast<char*>(data), len, 0);
+  return libusb_interrupt_transfer(m_handle,
+                                   static_cast<unsigned char>(endpoint) | LIBUSB_ENDPOINT_OUT,
+                                   data,len,
+                                   nullptr, /* bytes actually transfered */
+                                   0);
 }
 
 /* uint8_t  requesttype
@@ -122,16 +123,19 @@ USBDevice::ctrl_msg(int requesttype, int request,
                     int value, int index,
                     uint8_t* data, int size)
 {
-  return usb_control_msg(handle,
-                         requesttype,  request,
-                         value,  index,
-                         reinterpret_cast<char*>(data), size,
-                         0 /* timeout */);
+  return libusb_control_transfer(m_handle,
+                                 static_cast<uint8_t>(requesttype),
+                                 static_cast<uint8_t>(request),
+                                 static_cast<uint16_t>(value),
+                                 static_cast<uint16_t>(index),
+                                 data, static_cast<uint16_t>(size),
+                                 0 /* timeout */);
 }
 
 void
 USBDevice::print_info()
 {
+#if 0
   for(int i = 0; i < dev->descriptor.bNumConfigurations; ++i)
   {
     std::cout << "Configuration: " << i << std::endl;
@@ -150,6 +154,7 @@ USBDevice::print_info()
       }
     }
   }
+#endif
 }
 
 void
@@ -165,7 +170,7 @@ USBDevice::listen(int endpoint, std::function<void (uint8_t* data, int)> callbac
       int ret = read(endpoint, data, sizeof(data));
       if (ret < 0)
       {
-        std::cerr << "USBError: " << ret << "\n" << usb_strerror() << std::endl;
+        std::cerr << "USBError: " << libusb_error_name(ret) << "\n" << libusb_strerror(ret) << std::endl;
         std::cerr << "Shutting down" << std::endl;
         this_quit = true;
       }

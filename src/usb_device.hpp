@@ -19,14 +19,14 @@
 
 #include <functional>
 
-#include <usb.h>
+#include <libusb.h>
 
 namespace udraw {
 
 class USBDevice
 {
 public:
-  USBDevice(struct usb_device* dev_);
+  USBDevice(libusb_context* ctx, libusb_device_handle* dev);
   ~USBDevice();
 
   void reset();
@@ -34,7 +34,6 @@ public:
   void claim_interface(int iface);
   void release_interface(int iface);
   void set_configuration(int configuration);
-  void set_altinterface(int interface);
   int read(int endpoint, uint8_t* data, int len);
   int write(int endpoint, uint8_t* data, int len);
 
@@ -51,8 +50,8 @@ public:
   void listen(int endpoint, std::function<void (uint8_t* data, int)> callback);
 
 private:
-  struct usb_device*     dev;
-  struct usb_dev_handle* handle;
+  libusb_context* m_ctx;
+  libusb_device_handle* m_handle;
 
 private:
   USBDevice(const USBDevice&) = delete;
