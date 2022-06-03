@@ -88,31 +88,38 @@ USBDevice::set_configuration(int configuration)
   }
 }
 
-int
+size_t
 USBDevice::read(int endpoint, uint8_t* data, int len)
 {
-  int transfered = 0;
-  int err = libusb_interrupt_transfer(m_handle,
-                                      static_cast<unsigned char>(endpoint) | LIBUSB_ENDPOINT_IN,
-                                      data, len,
-                                      &transfered,
-                                      0);
+  int transfered;
+  int const err = libusb_interrupt_transfer(m_handle,
+                                            static_cast<unsigned char>(endpoint) | LIBUSB_ENDPOINT_IN,
+                                            data, len,
+                                            &transfered,
+                                            0);
 
-  if (transfered != len) {
-    log_warn("USBDevice::read(): short read: expected {} got {}", len, transfered);
+  if (err != LIBUSB_SUCCESS) {
+    throw std::runtime_error(fmt::format("USBDevice::read(): {}", libusb_strerror(err)));
   }
 
-  return err;
+  return transfered;
 }
 
-int
+size_t
 USBDevice::write(int endpoint, uint8_t* data, int len)
 {
-  return libusb_interrupt_transfer(m_handle,
-                                   static_cast<unsigned char>(endpoint) | LIBUSB_ENDPOINT_OUT,
-                                   data,len,
-                                   nullptr, /* bytes actually transfered */
-                                   0);
+  int transfered;
+  int const err = libusb_interrupt_transfer(m_handle,
+                                            static_cast<unsigned char>(endpoint) | LIBUSB_ENDPOINT_OUT,
+                                            data, len,
+                                            &transfered,
+                                            0);
+
+  if (err != LIBUSB_SUCCESS) {
+    throw std::runtime_error(fmt::format("USBDevice::write(): {}", libusb_strerror(err)));
+  }
+
+  return transfered;
 }
 
 /* uint8_t  requesttype
@@ -121,18 +128,24 @@ USBDevice::write(int endpoint, uint8_t* data, int len)
    uint16_t index;
    uint16_t length;
 */
-int
+size_t
 USBDevice::ctrl_msg(int requesttype, int request,
                     int value, int index,
                     uint8_t* data, int size)
 {
-  return libusb_control_transfer(m_handle,
-                                 static_cast<uint8_t>(requesttype),
-                                 static_cast<uint8_t>(request),
-                                 static_cast<uint16_t>(value),
-                                 static_cast<uint16_t>(index),
-                                 data, static_cast<uint16_t>(size),
-                                 0 /* timeout */);
+  int transferred = libusb_control_transfer(m_handle,
+                                            static_cast<uint8_t>(requesttype),
+                                            static_cast<uint8_t>(request),
+                                            static_cast<uint16_t>(value),
+                                            static_cast<uint16_t>(index),
+                                            data, static_cast<uint16_t>(size),
+                                            0 /* timeout */);
+
+  if (transferred < 0) {
+    throw std::runtime_error(fmt::format("ctrl_msg(): {}", libusb_strerror(transferred)));
+  }
+
+  return transferred;
 }
 
 void
@@ -180,7 +193,7 @@ USBDevice::print_info(std::ostream& out)
 }
 
 void
-USBDevice::listen(int endpoint, std::function<void (uint8_t* data, int)> callback)
+USBDevice::listen(int endpoint, std::function<void (uint8_t* data, size_t)> callback)
 {
   try
   {
@@ -189,14 +202,8 @@ USBDevice::listen(int endpoint, std::function<void (uint8_t* data, int)> callbac
     while(!this_quit)
     {
       uint8_t data[1024];
-      int err = read(endpoint, data, sizeof(data));
-      if (err != LIBUSB_SUCCESS) {
-        log_error("USBError: {}:\n{}", libusb_error_name(err), libusb_strerror(err));
-        log_error("Shutting down");
-        this_quit = true;
-      } else {
-        callback(data, err);
-      }
+      size_t transfered = read(endpoint, data, sizeof(data));
+      callback(data, transfered);
     }
 
   }

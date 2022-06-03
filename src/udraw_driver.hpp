@@ -19,6 +19,7 @@
 
 #include "fwd.hpp"
 
+#include <cstddef>
 #include <cstdint>
 
 namespace udraw {
@@ -32,7 +33,7 @@ public:
 
 private:
   void init_evdev();
-  void on_data(uint8_t const* data, int size);
+  void on_data(uint8_t const* data, size_t size);
 
 private:
   USBDevice& m_usbdev;

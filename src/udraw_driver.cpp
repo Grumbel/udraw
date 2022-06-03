@@ -31,12 +31,12 @@ namespace udraw {
 
 namespace {
 
-void print_raw_data(std::ostream& out, uint8_t const* data, int len)
+void print_raw_data(std::ostream& out, uint8_t const* data, size_t len)
 {
   out << "[" << len
             << "] ";
 
-  for(int i = 0; i < len; ++i)
+  for(size_t i = 0; i < len; ++i)
   {
     out << fmt::format("[{:d}]{:02x}", i, int(data[i]));
     if (i != len-1)
@@ -138,15 +138,8 @@ UDrawDriver::init_evdev()
 }
 
 void
-UDrawDriver::on_data(uint8_t const* data, int size)
+UDrawDriver::on_data(uint8_t const* data, size_t size)
 {
-  /*
-  if (size < 19) {
-    log_error("short read, ignoring");
-    return;
-  }
-  */
-
   UDrawDecoder decoder(data, size);
 
   if (m_opts.keyboard_mode)

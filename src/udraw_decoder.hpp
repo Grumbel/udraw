@@ -46,7 +46,7 @@ class UDrawDecoder
 {
 private:
   uint8_t const* m_data;
-  int m_len;
+  size_t m_len;
 
 public:
   enum {
@@ -55,7 +55,7 @@ public:
     PINCH_MODE
   };
 
-  UDrawDecoder(uint8_t const* data, int len) :
+  UDrawDecoder(uint8_t const* data, size_t len) :
     m_data(data),
     m_len(len)
   {

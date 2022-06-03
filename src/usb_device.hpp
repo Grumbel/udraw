@@ -35,8 +35,8 @@ public:
   void claim_interface(int iface);
   void release_interface(int iface);
   void set_configuration(int configuration);
-  int read(int endpoint, uint8_t* data, int len);
-  int write(int endpoint, uint8_t* data, int len);
+  size_t read(int endpoint, uint8_t* data, int len);
+  size_t write(int endpoint, uint8_t* data, int len);
 
   /* uint8_t  requesttype
      uint8_t  request
@@ -44,11 +44,11 @@ public:
      uint16_t index;
      uint16_t length;
   */
-  int ctrl_msg(int requesttype, int request,
-               int value, int index,
-               uint8_t* data, int size);
+  size_t ctrl_msg(int requesttype, int request,
+                  int value, int index,
+                  uint8_t* data, int size);
   void print_info(std::ostream& out);
-  void listen(int endpoint, std::function<void (uint8_t* data, int)> callback);
+  void listen(int endpoint, std::function<void (uint8_t* data, size_t)> callback);
 
 private:
   libusb_context* m_ctx;
