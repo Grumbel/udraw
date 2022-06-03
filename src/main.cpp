@@ -115,12 +115,12 @@ void run(int argc, char** argv)
     throw std::runtime_error(libusb_strerror(err));
   }
 
+  {
     USBDevice usbdev(usb_ctx, UDRAW_VENDOR_ID, UDRAW_PRODUCT_ID);
+    Evdev evdev;
+    UDrawDriver driver(usbdev, evdev, opts);
+    driver.run();
   }
-
-  Evdev evdev;
-  UDrawDriver driver(usbdev, evdev, opts);
-  driver.run();
 
   libusb_exit(usb_ctx);
 }
