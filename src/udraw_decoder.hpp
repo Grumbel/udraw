@@ -26,30 +26,99 @@
 namespace udraw {
 
 /*
-  data[7]; // right
-  data[8]; // left
-  data[9]; // up
-  data[10]; // down
+  // Device will sleep after 5 minutes
+struct Message
+{
+  // data[0]
+  unsigned zeros0: 4;
+  unsigned triangle: 1;
+  unsigned circle: 1;
+  unsigned cross: 1;
+  unsigned square: 1;
 
-  data[0] & 1 // square
-  data[0] & 2 // cross
-  data[0] & 8 // triangle
-  data[0] & 4 // circle
+  // data[1]
+  unsigned zeroes1: 3;
+  unsigned guide: 1;
+  unsigned zeroes2: 2;
+  unsigned select: 1;
+  unsigned start: 1;
 
-  data[1] & 1 // select
-  data[1] & 2 // start
-  data[1] & 0x10 // guide
+  // data[2]
+  unsigned zeroes3: 4;
+  unsigned hat: 4;
 
-  // 0x00 - nothing
-  // 0x80 - finger
-  // 0x40 - pen
-  // weird stuff when pinching (angle)
-  data[11]
+  // data[3]
+  unsigned const1: 8; // always: 1000 000
+  // data[4]
+  unsigned const2: 8; // always: 1000 000
+  // data[5]
+  unsigned const3: 8; // always: 1000 000
+  // data[6]
+  unsigned const4: 8; // always: 1000 000
 
-  data[12]; // pinch distance
+  // data[7]
+  unsigned right: 8; // 0 or 255
 
-  data[13]; // pressure, 0x70 neutral
+  // data[8]
+  unsigned left: 8; // 0 or 255
+
+  // data[9]
+  unsigned up: 8; // 0 or 255
+
+  // data[10]
+  unsigned down: 8; // 0 or 255
+
+  // data[11]
+  unsigned mode: 2; // 10: finger, 01: pen, 11: pinch
+  unsigned pinch_orientation: 8;
+
+  // data[12]
+  unsigned pinch_distance: 8;
+
+  // data[13]
+  unsigned pressure: 8; // 142-255, rest unused
+
+  // data[14]
+  unsigned cross: 8; // 0 or 255
+
+  // data[15]
+  unsigned x_hi : 8; // ~ 0 - 1920
+
+  // data[16]
+  unsigned y_hi : 8;
+
+  // data[17]
+  unsigned x_lo : 8; // ~ 0 - 1080
+
+  // data[18]
+  unsigned y_lo : 8;
+
+  // data[19]
+  unsigned accel_x_lo : 8; // -512, low resolution
+
+  // data[20]
+  unsigned accel_x_hi : 8;
+
+  // data[21]
+  unsigned accel_y_lo : 8;
+
+  // data[22]
+  unsigned accel_y_hi : 8;
+
+  // data[23]
+  unsigned accel_z_lo : 8;
+
+  // data[24]
+  unsigned accel_z_hi : 8;
+
+  // data[25]
+  unsigned zeroes : 8;
+
+  // data[26]
+  unsigned const2 : 8; // always: 0000 0010
+};
 */
+
 class UDrawDecoder
 {
 public:
