@@ -44,17 +44,15 @@
 */
 class UDrawDecoder
 {
-private:
-  uint8_t const* m_data;
-  size_t m_len;
-
 public:
-  enum {
-    PEN_MODE    = 0x40,
-    FINGER_MODE = 0x80,
-    PINCH_MODE
+  enum class Mode {
+    UNKNOWN,
+    PEN,
+    FINGER,
+    PINCH,
   };
 
+public:
   UDrawDecoder(uint8_t const* data, size_t len) :
     m_data(data),
     m_len(len)
@@ -67,67 +65,45 @@ public:
     }
   }
 
-  int get_x() const
+  // pen: 3px resolution
+  // finger: 1px resolution
+  int x() const { return m_data[15] * 255 + m_data[17]; }
+  int y() const { return m_data[16] * 255 + m_data[18]; }
+
+  int pressure() const { return m_data[13] - 0x70; }
+  int orientation() const { return m_data[11] - 0xc0; }
+
+  Mode mode() const
   {
-    // pen: 3px resolution
-    // finger: 1px resolution
-    return m_data[15] * 255 + m_data[17];
+    if (0xc0 <= m_data[11] && m_data[11] <= 253) {
+      return Mode::PINCH;
+    } else if (m_data[11] == 0x40) {
+      return Mode::PEN;
+    } else if (m_data[11] == 0x80) {
+      return Mode::FINGER;
+    } else {
+      return Mode::UNKNOWN;
+    }
   }
 
-  int get_y() const
-  {
-    return m_data[16] * 255 + m_data[18];
-  }
+  bool up() const { return m_data[9]; }
+  bool down() const { return m_data[10]; }
+  bool left() const { return m_data[8]; }
+  bool right() const { return m_data[7]; }
 
-  int get_pressure() const
-  {
-    return m_data[13] - 0x70;
-  }
+  bool square() const { return m_data[0] & 1; }
+  bool cross() const { return m_data[0] & 2; }
+  bool triangle() const { return m_data[0] & 8; }
+  bool circle() const { return m_data[0] & 4; }
 
-  int get_orientation() const
-  {
-    return m_data[11] - 0xc0;
-  }
+  bool start() const { return m_data[1] & 1; }
+  bool select() const { return m_data[1] & 2; }
+  bool guide() const { return m_data[1] & 0x10; }
 
-  int get_mode() const
-  {
-    //std::cout << int(m_data[11]) << std::endl;
-    if (0xc0 <= m_data[11] && m_data[11] <= 253)
-      return PINCH_MODE;
-    else
-      return m_data[11];
-  }
-
-  bool get_up() const
-  {
-    return m_data[9];
-  }
-
-  bool get_down() const
-  {
-    return m_data[10];
-  }
-
-  bool get_left() const
-  {
-    return m_data[8];
-  }
-
-  bool get_right() const
-  {
-    return m_data[7];
-  }
-
-  bool get_square() const { return m_data[0] & 1; }
-  bool get_cross() const { return m_data[0] & 2; }
-  bool get_triangle() const { return m_data[0] & 8; }
-  bool get_circle() const { return m_data[0] & 4; }
-
-  bool get_start() const { return m_data[1] & 1; }
-  bool get_select() const { return m_data[1] & 2; }
-  bool get_guide() const { return m_data[1] & 0x10; }
+private:
+  uint8_t const* m_data;
+  size_t m_len;
 };
-
 
 #endif
 

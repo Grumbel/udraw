@@ -144,47 +144,47 @@ UDrawDriver::on_data(uint8_t const* data, size_t size)
 
   if (m_opts.keyboard_mode)
   {
-    m_evdev.send(EV_KEY, KEY_LEFT,  decoder.get_left());
-    m_evdev.send(EV_KEY, KEY_RIGHT, decoder.get_right());
-    m_evdev.send(EV_KEY, KEY_UP,    decoder.get_up());
-    m_evdev.send(EV_KEY, KEY_DOWN,  decoder.get_down());
+    m_evdev.send(EV_KEY, KEY_LEFT,  decoder.left());
+    m_evdev.send(EV_KEY, KEY_RIGHT, decoder.right());
+    m_evdev.send(EV_KEY, KEY_UP,    decoder.up());
+    m_evdev.send(EV_KEY, KEY_DOWN,  decoder.down());
 
-    m_evdev.send(EV_KEY, KEY_ENTER, decoder.get_cross());
-    m_evdev.send(EV_KEY, KEY_SPACE, decoder.get_circle());
-    m_evdev.send(EV_KEY, KEY_A, decoder.get_square());
-    m_evdev.send(EV_KEY, KEY_Z, decoder.get_triangle());
+    m_evdev.send(EV_KEY, KEY_ENTER, decoder.cross());
+    m_evdev.send(EV_KEY, KEY_SPACE, decoder.circle());
+    m_evdev.send(EV_KEY, KEY_A, decoder.square());
+    m_evdev.send(EV_KEY, KEY_Z, decoder.triangle());
 
-    m_evdev.send(EV_KEY, KEY_ESC,  decoder.get_start());
-    m_evdev.send(EV_KEY, KEY_TAB, decoder.get_select());
+    m_evdev.send(EV_KEY, KEY_ESC,  decoder.start());
+    m_evdev.send(EV_KEY, KEY_TAB, decoder.select());
 
     m_evdev.send(EV_SYN, SYN_REPORT, 0);
   }
   else if (m_opts.gamepad_mode)
   {
-    m_evdev.send(EV_ABS, ABS_X, -1 * decoder.get_left() + 1 * decoder.get_right());
-    m_evdev.send(EV_ABS, ABS_Y, -1 * decoder.get_up()   + 1 * decoder.get_down());
+    m_evdev.send(EV_ABS, ABS_X, -1 * decoder.left() + 1 * decoder.right());
+    m_evdev.send(EV_ABS, ABS_Y, -1 * decoder.up()   + 1 * decoder.down());
 
-    m_evdev.send(EV_KEY, BTN_A, decoder.get_cross());
-    m_evdev.send(EV_KEY, BTN_B, decoder.get_circle());
-    m_evdev.send(EV_KEY, BTN_X, decoder.get_square());
-    m_evdev.send(EV_KEY, BTN_Y, decoder.get_triangle());
+    m_evdev.send(EV_KEY, BTN_A, decoder.cross());
+    m_evdev.send(EV_KEY, BTN_B, decoder.circle());
+    m_evdev.send(EV_KEY, BTN_X, decoder.square());
+    m_evdev.send(EV_KEY, BTN_Y, decoder.triangle());
 
-    m_evdev.send(EV_KEY, BTN_START,  decoder.get_start());
-    m_evdev.send(EV_KEY, BTN_SELECT, decoder.get_select());
-    m_evdev.send(EV_KEY, BTN_Z, decoder.get_guide());
+    m_evdev.send(EV_KEY, BTN_START,  decoder.start());
+    m_evdev.send(EV_KEY, BTN_SELECT, decoder.select());
+    m_evdev.send(EV_KEY, BTN_Z, decoder.guide());
 
     m_evdev.send(EV_SYN, SYN_REPORT, 0);
   }
   else if (m_opts.tablet_mode)
   {
-    if (decoder.get_mode() == UDrawDecoder::PEN_MODE)
+    if (decoder.mode() == UDrawDecoder::Mode::PEN)
     {
-      m_evdev.send(EV_ABS, ABS_X, decoder.get_x());
-      m_evdev.send(EV_ABS, ABS_Y, decoder.get_y());
-      m_evdev.send(EV_ABS, ABS_PRESSURE, decoder.get_pressure());
+      m_evdev.send(EV_ABS, ABS_X, decoder.x());
+      m_evdev.send(EV_ABS, ABS_Y, decoder.y());
+      m_evdev.send(EV_ABS, ABS_PRESSURE, decoder.pressure());
       m_evdev.send(EV_KEY, BTN_TOOL_PEN, 1);
 
-      if (decoder.get_pressure() > 5)
+      if (decoder.pressure() > 5)
       {
         m_evdev.send(EV_KEY, BTN_TOUCH, 1);
       }
@@ -203,15 +203,15 @@ UDrawDriver::on_data(uint8_t const* data, size_t size)
   }
   else if (m_opts.touchpad_mode)
   {
-    m_evdev.send(EV_KEY, BTN_LEFT,  decoder.get_right());
-    m_evdev.send(EV_KEY, BTN_RIGHT, decoder.get_left());
+    m_evdev.send(EV_KEY, BTN_LEFT,  decoder.right());
+    m_evdev.send(EV_KEY, BTN_RIGHT, decoder.left());
 
-    if (decoder.get_mode() == UDrawDecoder::FINGER_MODE)
+    if (decoder.mode() == UDrawDecoder::Mode::FINGER)
     {
       if (!finger_touching)
       {
-        touch_pos_x = decoder.get_x();
-        touch_pos_y = decoder.get_y();
+        touch_pos_x = decoder.x();
+        touch_pos_y = decoder.y();
         finger_touching = true;
 
         if (touch_pos_x > 1800)
@@ -227,7 +227,7 @@ UDrawDriver::on_data(uint8_t const* data, size_t size)
 
       if (scroll_wheel)
       {
-        wheel_distance += (decoder.get_y() - touch_pos_y) / 10;
+        wheel_distance += (decoder.y() - touch_pos_y) / 10;
 
         int rel = wheel_distance/10;
         if (rel != 0)
@@ -235,17 +235,17 @@ UDrawDriver::on_data(uint8_t const* data, size_t size)
           m_evdev.send(EV_REL, REL_WHEEL, -rel);
 
           wheel_distance -= rel;
-          touch_pos_x = decoder.get_x();
-          touch_pos_y = decoder.get_y();
+          touch_pos_x = decoder.x();
+          touch_pos_y = decoder.y();
         }
       }
       else
       {
-        m_evdev.send(EV_REL, REL_X, decoder.get_x() - touch_pos_x);
-        m_evdev.send(EV_REL, REL_Y, decoder.get_y() - touch_pos_y);
+        m_evdev.send(EV_REL, REL_X, decoder.x() - touch_pos_x);
+        m_evdev.send(EV_REL, REL_Y, decoder.y() - touch_pos_y);
 
-        touch_pos_x = decoder.get_x();
-        touch_pos_y = decoder.get_y();
+        touch_pos_x = decoder.x();
+        touch_pos_y = decoder.y();
       }
     }
     else
@@ -316,34 +316,34 @@ UDrawDriver::on_data(uint8_t const* data, size_t size)
 
   if (false)
   {
-    m_evdev.send(EV_KEY, BTN_RIGHT,  decoder.get_left());
-    m_evdev.send(EV_KEY, BTN_MIDDLE, decoder.get_up());
-    m_evdev.send(EV_KEY, BTN_LEFT,   decoder.get_right());
+    m_evdev.send(EV_KEY, BTN_RIGHT,  decoder.left());
+    m_evdev.send(EV_KEY, BTN_MIDDLE, decoder.up());
+    m_evdev.send(EV_KEY, BTN_LEFT,   decoder.right());
 
-    m_evdev.send(EV_REL, REL_WHEEL, decoder.get_triangle() ? 1 : 0);
-    m_evdev.send(EV_REL, REL_WHEEL, decoder.get_cross() ? -1 : 0);
+    m_evdev.send(EV_REL, REL_WHEEL, decoder.triangle() ? 1 : 0);
+    m_evdev.send(EV_REL, REL_WHEEL, decoder.cross() ? -1 : 0);
 
-    m_evdev.send(EV_KEY, KEY_BACK,    decoder.get_circle());
-    m_evdev.send(EV_KEY, KEY_FORWARD, decoder.get_square());
+    m_evdev.send(EV_KEY, KEY_BACK,    decoder.circle());
+    m_evdev.send(EV_KEY, KEY_FORWARD, decoder.square());
 
     if (false)
     {
       // FIXME: does not work as is, needs throttling
 
-      if (decoder.get_mode() == UDrawDecoder::PINCH_MODE)
+      if (decoder.mode() == UDrawDecoder::Mode::PINCH)
       {
         if (!pinch_touching)
         {
-          touch_pos_x = decoder.get_x();
-          touch_pos_y = decoder.get_y();
+          touch_pos_x = decoder.x();
+          touch_pos_y = decoder.y();
           pinch_touching = true;
         }
 
-        m_evdev.send(EV_REL, REL_HWHEEL, decoder.get_x() - touch_pos_x);
-        m_evdev.send(EV_REL, REL_WHEEL,  decoder.get_y() - touch_pos_y);
+        m_evdev.send(EV_REL, REL_HWHEEL, decoder.x() - touch_pos_x);
+        m_evdev.send(EV_REL, REL_WHEEL,  decoder.y() - touch_pos_y);
 
-        touch_pos_x = decoder.get_x();
-        touch_pos_y = decoder.get_y();
+        touch_pos_x = decoder.x();
+        touch_pos_y = decoder.y();
       }
       else
       {
