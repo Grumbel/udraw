@@ -134,26 +134,45 @@ USBDevice::ctrl_msg(int requesttype, int request,
 void
 USBDevice::print_info(std::ostream& out)
 {
-#if 0
-  for(int i = 0; i < dev->descriptor.bNumConfigurations; ++i)
+  libusb_device* dev = libusb_get_device(m_handle);
+  libusb_device_descriptor desc;
+
+  int err = libusb_get_device_descriptor(dev, &desc);
+  if (err != LIBUSB_SUCCESS) {
+    throw std::runtime_error(fmt::format("failed to get device descriptor: {}", libusb_strerror(err)));
+  }
+
+  for (uint8_t config_index = 0; config_index < desc.bNumConfigurations; ++config_index)
   {
-    out << "Configuration: " << i << std::endl;
-    for(int j = 0; j < dev->config[i].bNumInterfaces; ++j)
+    libusb_config_descriptor* config;
+    err = libusb_get_config_descriptor(dev, config_index, &config);
+    if (err != LIBUSB_SUCCESS) {
+      throw std::runtime_error(fmt::format("failed to get config descriptor: {}", libusb_strerror(err)));
+    }
+
+    out << "Configuration: " << config_index << std::endl;
+    for(int interface_index = 0; interface_index < config->bNumInterfaces; ++interface_index)
     {
-      out << "  Interface " << j << ":" << std::endl;
-      for(int k = 0; k < dev->config[i].interface[j].num_altsetting; ++k)
+      libusb_interface const& interface = config->interface[interface_index];
+
+      out << "  Interface " << interface_index << ":" << std::endl;
+      for(int altsetting_index = 0; altsetting_index < interface.num_altsetting; ++altsetting_index)
       {
-        for(int l = 0; l < dev->config[i].interface[j].altsetting[k].bNumEndpoints; ++l)
+        libusb_interface_descriptor const& altsetting = interface.altsetting[altsetting_index];
+
+        for(int endpoint_index = 0; endpoint_index < altsetting.bNumEndpoints; ++endpoint_index)
         {
+          libusb_endpoint_descriptor const& endpoint = altsetting.endpoint[endpoint_index];
+
           out << "    Endpoint: "
-              << int(dev->config[i].interface[j].altsetting[k].endpoint[l].bEndpointAddress & USB_ENDPOINT_ADDRESS_MASK)
-              << ((dev->config[i].interface[j].altsetting[k].endpoint[l].bEndpointAddress & USB_ENDPOINT_DIR_MASK) ? " (IN)" : " (OUT)")
+              << int(endpoint.bEndpointAddress & LIBUSB_ENDPOINT_ADDRESS_MASK)
+              << ((endpoint.bEndpointAddress & LIBUSB_ENDPOINT_DIR_MASK) ? " (IN)" : " (OUT)")
               << std::endl;
         }
       }
     }
+    libusb_free_config_descriptor(config);
   }
-#endif
 }
 
 void
