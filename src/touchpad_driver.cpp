@@ -56,9 +56,9 @@ TouchpadDriver::receive_data(uint8_t const* data, size_t size)
 {
   UDrawDecoder decoder(data, size);
 
-  m_evdev.send(EV_KEY, BTN_LEFT,  decoder.right());
-  m_evdev.send(EV_KEY, BTN_RIGHT, decoder.left());
-  m_evdev.send(EV_KEY, BTN_MIDDLE, decoder.up());
+  m_evdev.send(EV_KEY, BTN_LEFT,  decoder.right() || decoder.square());
+  m_evdev.send(EV_KEY, BTN_RIGHT, decoder.left() || decoder.circle());
+  m_evdev.send(EV_KEY, BTN_MIDDLE, decoder.up() || decoder.triangle());
 
   if (decoder.mode() == UDrawDecoder::Mode::FINGER)
   {
@@ -68,7 +68,7 @@ TouchpadDriver::receive_data(uint8_t const* data, size_t size)
       m_touch_pos_y = decoder.y();
       m_finger_touching = true;
 
-      if (m_touch_pos_x > 1800)
+      if (m_touch_pos_x < 120 || m_touch_pos_x > 1800)
       {
         m_scroll_wheel = true;
         m_wheel_distance = 0;
