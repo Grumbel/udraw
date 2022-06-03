@@ -63,7 +63,9 @@ UDrawDriver::run()
   m_usbdev.detach_kernel_driver(0);
   m_usbdev.claim_interface(0);
 
-  m_usbdev.listen(3, [this](uint8_t* data, int size){ on_data(data, size); });
+  m_usbdev.listen(3, [this](uint8_t* data, int size){
+    on_data(data, size);
+  });
 }
 
 void

@@ -27,7 +27,7 @@ namespace udraw {
 class USBDevice
 {
 public:
-  USBDevice(libusb_context* ctx, libusb_device_handle* dev);
+  USBDevice(libusb_context* ctx, uint16_t vendor_id, uint16_t product_id);
   ~USBDevice();
 
   void reset();

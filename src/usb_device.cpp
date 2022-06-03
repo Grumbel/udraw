@@ -24,10 +24,14 @@
 
 namespace udraw {
 
-USBDevice::USBDevice(libusb_context* ctx, libusb_device_handle* handle) :
+USBDevice::USBDevice(libusb_context* ctx, uint16_t vendor_id, uint16_t product_id) :
   m_ctx(ctx),
-  m_handle(handle)
+  m_handle(nullptr)
 {
+  m_handle = libusb_open_device_with_vid_pid(m_ctx, vendor_id, product_id);
+  if (!m_handle) {
+    throw std::runtime_error(fmt::format("error: no udraw tablet found ({:x}:{:x})", vendor_id, product_id));
+  }
 }
 
 USBDevice::~USBDevice()
@@ -90,7 +94,7 @@ USBDevice::read(int endpoint, uint8_t* data, int len)
   int transfered = 0;
   int err = libusb_interrupt_transfer(m_handle,
                                       static_cast<unsigned char>(endpoint) | LIBUSB_ENDPOINT_IN,
-                                      data,len,
+                                      data, len,
                                       &transfered,
                                       0);
 

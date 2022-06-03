@@ -42,6 +42,9 @@
 
 namespace udraw {
 
+uint16_t const UDRAW_VENDOR_ID = 0x20d6;
+uint16_t const UDRAW_PRODUCT_ID = 0xcb17;
+
 class USBDevice;
 
 bool global_interrupt = false;
@@ -112,12 +115,9 @@ void run(int argc, char** argv)
     throw std::runtime_error(libusb_strerror(err));
   }
 
-  struct libusb_device_handle* handle = libusb_open_device_with_vid_pid(usb_ctx, 0x20d6, 0xcb17);
-  if (!handle) {
-    throw std::runtime_error("error: no udraw tablet found (20d6:cb17)");
+    USBDevice usbdev(usb_ctx, UDRAW_VENDOR_ID, UDRAW_PRODUCT_ID);
   }
 
-  USBDevice usbdev(usb_ctx, handle);
   Evdev evdev;
   UDrawDriver driver(usbdev, evdev, opts);
   driver.run();
