@@ -40,12 +40,12 @@ private:
   Evdev& m_evdev;
   Options const& m_opts;
 
-  int touch_pos_x = 0;
-  int touch_pos_y = 0;
-  bool finger_touching = false;
-  bool pinch_touching = false;
-  bool scroll_wheel = false;
-  int wheel_distance = 0;
+  int m_touch_pos_x = 0;
+  int m_touch_pos_y = 0;
+  bool m_finger_touching = false;
+  bool m_pinch_touching = false;
+  bool m_scroll_wheel = false;
+  int m_wheel_distance = 0;
 
 private:
   UDrawDriver(const UDrawDriver&) = delete;

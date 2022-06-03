@@ -209,49 +209,49 @@ UDrawDriver::on_data(uint8_t const* data, size_t size)
 
     if (decoder.mode() == UDrawDecoder::Mode::FINGER)
     {
-      if (!finger_touching)
+      if (!m_finger_touching)
       {
-        touch_pos_x = decoder.x();
-        touch_pos_y = decoder.y();
-        finger_touching = true;
+        m_touch_pos_x = decoder.x();
+        m_touch_pos_y = decoder.y();
+        m_finger_touching = true;
 
-        if (touch_pos_x > 1800)
+        if (m_touch_pos_x > 1800)
         {
-          scroll_wheel = true;
-          wheel_distance = 0;
+          m_scroll_wheel = true;
+          m_wheel_distance = 0;
         }
         else
         {
-          scroll_wheel = false;
+          m_scroll_wheel = false;
         }
       }
 
-      if (scroll_wheel)
+      if (m_scroll_wheel)
       {
-        wheel_distance += (decoder.y() - touch_pos_y) / 10;
+        m_wheel_distance += (decoder.y() - m_touch_pos_y) / 10;
 
-        int rel = wheel_distance/10;
+        int rel = m_wheel_distance/10;
         if (rel != 0)
         {
           m_evdev.send(EV_REL, REL_WHEEL, -rel);
 
-          wheel_distance -= rel;
-          touch_pos_x = decoder.x();
-          touch_pos_y = decoder.y();
+          m_wheel_distance -= rel;
+          m_touch_pos_x = decoder.x();
+          m_touch_pos_y = decoder.y();
         }
       }
       else
       {
-        m_evdev.send(EV_REL, REL_X, decoder.x() - touch_pos_x);
-        m_evdev.send(EV_REL, REL_Y, decoder.y() - touch_pos_y);
+        m_evdev.send(EV_REL, REL_X, decoder.x() - m_touch_pos_x);
+        m_evdev.send(EV_REL, REL_Y, decoder.y() - m_touch_pos_y);
 
-        touch_pos_x = decoder.x();
-        touch_pos_y = decoder.y();
+        m_touch_pos_x = decoder.x();
+        m_touch_pos_y = decoder.y();
       }
     }
     else
     {
-      finger_touching = false;
+      m_finger_touching = false;
     }
     m_evdev.send(EV_SYN, SYN_REPORT, 0);
   }
@@ -283,22 +283,22 @@ UDrawDriver::on_data(uint8_t const* data, size_t size)
 
       if (decoder.mode() == UDrawDecoder::Mode::PINCH)
       {
-        if (!pinch_touching)
+        if (!m_pinch_touching)
         {
-          touch_pos_x = decoder.x();
-          touch_pos_y = decoder.y();
-          pinch_touching = true;
+          m_touch_pos_x = decoder.x();
+          m_touch_pos_y = decoder.y();
+          m_pinch_touching = true;
         }
 
-        m_evdev.send(EV_REL, REL_HWHEEL, decoder.x() - touch_pos_x);
-        m_evdev.send(EV_REL, REL_WHEEL,  decoder.y() - touch_pos_y);
+        m_evdev.send(EV_REL, REL_HWHEEL, decoder.x() - m_touch_pos_x);
+        m_evdev.send(EV_REL, REL_WHEEL,  decoder.y() - m_touch_pos_y);
 
-        touch_pos_x = decoder.x();
-        touch_pos_y = decoder.y();
+        m_touch_pos_x = decoder.x();
+        m_touch_pos_y = decoder.y();
       }
       else
       {
-        pinch_touching = false;
+        m_pinch_touching = false;
       }
 
       m_evdev.send(EV_SYN, SYN_REPORT, 0);
