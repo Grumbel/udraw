@@ -56,6 +56,8 @@ void print_help(const char* argv0)
             << "\n"
             << "Options:\n"
             << "  -h, --help  display this help\n"
+            << "  --test      pretty print data (default)\n"
+            << "  --raw       print raw data\n"
             << "  --touchpad  use the device as touchpad\n"
             << "  --tablet    use the device as graphic tablet\n"
             << "  --gamepad   use the device as gamepad\n"
@@ -70,34 +72,26 @@ Options parse_args(int argc, char** argv)
 
   for(int i = 1; i < argc; ++i)
   {
-    if (strcmp("--gamepad", argv[i]) == 0)
-    {
-      opts.gamepad_mode = true;
-    }
-    else if (strcmp("--keyboard", argv[i]) == 0)
-    {
-      opts.keyboard_mode = true;
-    }
-    else if (strcmp("--tablet", argv[i]) == 0)
-    {
-      opts.tablet_mode = true;
-    }
-    else if (strcmp("--touchpad", argv[i]) == 0)
-    {
-      opts.touchpad_mode = true;
-    }
-    else if (strcmp("--accelerometer", argv[i]) == 0)
-    {
-      opts.accelerometer_mode = true;
-    }
-    else if (strcmp("--help", argv[i]) == 0 ||
-             strcmp("-h", argv[i]) == 0)
+    if (strcmp("--test", argv[i]) == 0) {
+      opts.mode = Options::Mode::TEST;
+    } else if (strcmp("--raw", argv[i]) == 0) {
+      opts.mode = Options::Mode::RAW;
+    } else if (strcmp("--gamepad", argv[i]) == 0) {
+      opts.mode = Options::Mode::GAMEPAD;
+    } else if (strcmp("--keyboard", argv[i]) == 0) {
+      opts.mode = Options::Mode::KEYBOARD;
+    } else if (strcmp("--tablet", argv[i]) == 0) {
+      opts.mode = Options::Mode::TABLET;
+    } else if (strcmp("--touchpad", argv[i]) == 0) {
+      opts.mode = Options::Mode::TOUCHPAD;
+    } else if (strcmp("--accelerometer", argv[i]) == 0){
+      opts.mode = Options::Mode::ACCELEROMETER;
+    } else if (strcmp("--help", argv[i]) == 0 ||
+               strcmp("-h", argv[i]) == 0)
     {
       print_help(argv[0]);
       exit(EXIT_SUCCESS);
-    }
-    else
-    {
+    } else {
       throw std::runtime_error(fmt::format("unknown option: {}", argv[i]));
     }
   }
