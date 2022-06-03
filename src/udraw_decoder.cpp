@@ -18,6 +18,8 @@
 
 #include <ostream>
 
+namespace udraw {
+
 std::ostream& operator<<(std::ostream& os, UDrawDecoder const& decoder)
 {
   os << fmt::format(
@@ -43,5 +45,7 @@ std::ostream& operator<<(std::ostream& os, UDrawDecoder const& decoder)
     );
   return os;
 }
+
+} // namespace udraw
 
 /* EOF */

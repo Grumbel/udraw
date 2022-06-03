@@ -23,6 +23,8 @@
 
 #include <fmt/format.h>
 
+namespace udraw {
+
 /*
   data[7]; // right
   data[8]; // left
@@ -127,6 +129,8 @@ private:
 };
 
 std::ostream& operator<<(std::ostream& os, UDrawDecoder const& decoder);
+
+} // namespace udraw
 
 #endif
 
