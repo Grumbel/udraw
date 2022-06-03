@@ -86,6 +86,9 @@ Options parse_args(int argc, char** argv)
       opts.mode = Options::Mode::TOUCHPAD;
     } else if (strcmp("--accelerometer", argv[i]) == 0){
       opts.mode = Options::Mode::ACCELEROMETER;
+    } else if (strcmp("--verbose", argv[i]) == 0 ||
+               strcmp("-v", argv[i]) == 0) {
+      opts.verbose = true;
     } else if (strcmp("--help", argv[i]) == 0 ||
                strcmp("-h", argv[i]) == 0)
     {
@@ -101,7 +104,11 @@ Options parse_args(int argc, char** argv)
 
 void run(int argc, char** argv)
 {
-  Options opts = parse_args(argc, argv);
+  Options const opts = parse_args(argc, argv);
+
+  if (opts.verbose) {
+    logmich::g_logger.set_log_level(logmich::LogLevel::DEBUG);
+  }
 
   libusb_context* usb_ctx;
   int err = libusb_init(&usb_ctx);

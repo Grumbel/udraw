@@ -31,10 +31,8 @@ struct Options
     ACCELEROMETER
   };
 
-  Mode mode;
-  Options() :
-    mode(Mode::TEST)
-  {}
+  bool verbose = false;
+  Mode mode = Mode::TEST;
 };
 
 } // namespace udraw
