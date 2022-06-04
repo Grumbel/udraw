@@ -37,6 +37,28 @@ public:
 private:
   uinpp::MultiDevice& m_evdev;
 
+  uinpp::EventEmitter* m_touchclick;
+
+  uinpp::EventEmitter* m_up;
+  uinpp::EventEmitter* m_down;
+  uinpp::EventEmitter* m_left;
+  uinpp::EventEmitter* m_right;
+
+  uinpp::EventEmitter* m_triangle;
+  uinpp::EventEmitter* m_cross;
+  uinpp::EventEmitter* m_square;
+  uinpp::EventEmitter* m_circle;
+
+  uinpp::EventEmitter* m_start;
+  uinpp::EventEmitter* m_select;
+  uinpp::EventEmitter* m_guide;
+
+  uinpp::EventEmitter* m_rel_wheel;
+  uinpp::EventEmitter* m_rel_hwheel;
+
+  uinpp::EventEmitter* m_rel_x;
+  uinpp::EventEmitter* m_rel_y;
+
   int m_touchdown_pos_x;
   int m_touchdown_pos_y;
   int m_touch_pos_x;
