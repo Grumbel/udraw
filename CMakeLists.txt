@@ -17,20 +17,9 @@
 cmake_minimum_required(VERSION 3.6)
 project(udraw-driver)
 
-set(TINYCMMC_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/external/tinycmmc/modules/")
-find_package(tinycmmc CONFIG)
-message(STATUS "tinycmmc module path: ${TINYCMMC_MODULE_PATH}")
-list(APPEND CMAKE_MODULE_PATH ${TINYCMMC_MODULE_PATH})
+include(mk/cmake/TinyCMMC.cmake)
 
-include(GNUInstallDirs)
-include(MaximumWarnings)
-include(GetProjectVersion)
-
-set(CMAKE_CXX_STANDARD 17)
-set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_EXTENSIONS OFF)
-
-list(APPEND WARNINGS_CXX_FLAGS
+list(APPEND TINYCMMC_WARNINGS_CXX_FLAGS
   -Wno-stringop-overread # produces bogus warnings
   )
 
@@ -38,26 +27,15 @@ find_package(fmt REQUIRED)
 find_package(Threads REQUIRED)
 find_package(PkgConfig REQUIRED)
 pkg_search_module(LIBUSB REQUIRED libusb-1.0 IMPORTED_TARGET)
-
-function(build_dependencies)
-  find_package(logmich QUIET)
-  if(NOT TARGET logmich::logmich)
-    add_subdirectory(external/logmich/ EXCLUDE_FROM_ALL)
-  endif()
-
-  find_package(uinpp)
-  if(NOT TARGET uinpp::uinpp)
-    add_subdirectory(external/uinpp/)
-  endif()
-endfunction()
-build_dependencies()
+tinycmmc_find_dependency(logmich)
+tinycmmc_find_dependency(uinpp)
 
 file(GLOB UDRAW_SOURCES_CXX src/*.cpp)
 add_executable(udraw-driver ${UDRAW_SOURCES_CXX})
 target_compile_definitions(udraw-driver PRIVATE
   -DPROJECT_VERSION="${PROJECT_VERSION}"
   -DPROJECT_NAME="${PROJECT_NAME}")
-target_compile_options(udraw-driver PRIVATE ${WARNINGS_CXX_FLAGS})
+target_compile_options(udraw-driver PRIVATE ${TINYCMMC_WARNINGS_CXX_FLAGS})
 target_link_libraries(udraw-driver
   fmt::fmt
   logmich::logmich

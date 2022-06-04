@@ -103,11 +103,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1654000716,
-        "narHash": "sha256-aCfXSXWVki7moiSR/oFaZRnRdO/5jhZbJ39jEI8fi5I=",
+        "lastModified": 1654382627,
+        "narHash": "sha256-5v53MCDsoje6DcC8hPx5d3eYTAdz1SOESzUeR7D1hdw=",
         "owner": "grumbel",
         "repo": "tinycmmc",
-        "rev": "22c77404937829f4b2da539c6c2e0e99545440e8",
+        "rev": "c126e814b4b7c7b99c29a60a9784c0743182110b",
         "type": "github"
       },
       "original": {
