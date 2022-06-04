@@ -33,7 +33,7 @@
         packages = flake-utils.lib.flattenTree {
           udraw = pkgs.stdenv.mkDerivation {
             pname = "udraw";
-            version = "0.0.0";
+            version = "0.1.0";
             src = nixpkgs.lib.cleanSource ./.;
             nativeBuildInputs = with pkgs; [
               cmake

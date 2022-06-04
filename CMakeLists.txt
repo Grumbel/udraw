@@ -15,7 +15,7 @@
 # along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 cmake_minimum_required(VERSION 3.6)
-project(udraw)
+project(udraw-driver)
 
 set(TINYCMMC_MODULE_PATH "${CMAKE_CURRENT_LIST_DIR}/external/tinycmmc/modules/")
 find_package(tinycmmc CONFIG)
@@ -24,6 +24,7 @@ list(APPEND CMAKE_MODULE_PATH ${TINYCMMC_MODULE_PATH})
 
 include(GNUInstallDirs)
 include(MaximumWarnings)
+include(GetProjectVersion)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -53,6 +54,9 @@ build_dependencies()
 
 file(GLOB UDRAW_SOURCES_CXX src/*.cpp)
 add_executable(udraw-driver ${UDRAW_SOURCES_CXX})
+target_compile_definitions(udraw-driver PRIVATE
+  -DPROJECT_VERSION="${PROJECT_VERSION}"
+  -DPROJECT_NAME="${PROJECT_NAME}")
 target_compile_options(udraw-driver PRIVATE ${WARNINGS_CXX_FLAGS})
 target_link_libraries(udraw-driver
   fmt::fmt

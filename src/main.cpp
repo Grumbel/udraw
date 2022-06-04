@@ -57,6 +57,7 @@ void print_help(const char* argv0)
             << "Options:\n"
             << "  -h, --help     display this help\n"
             << "  -v, --verbose  be more verbose\n"
+            << "  -v, --version  print version number\n"
             << "\n"
             << "Modes:\n"
             << "  --test         pretty print data (default)\n"
@@ -89,6 +90,11 @@ Options parse_args(int argc, char** argv)
     } else if (strcmp("--verbose", argv[i]) == 0 ||
                strcmp("-v", argv[i]) == 0) {
       opts.verbose = true;
+    } else if (strcmp("--version", argv[i]) == 0 ||
+               strcmp("-V", argv[i]) == 0)
+    {
+      std::cout << PROJECT_NAME << " " << PROJECT_VERSION << std::endl;
+      exit(EXIT_SUCCESS);
     } else if (strcmp("--help", argv[i]) == 0 ||
                strcmp("-h", argv[i]) == 0)
     {
