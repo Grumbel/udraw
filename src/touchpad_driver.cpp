@@ -46,14 +46,15 @@ TouchpadDriver::~TouchpadDriver()
 void
 TouchpadDriver::init()
 {
+  m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), KEY_FORWARD);
+  m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), KEY_BACK);
+  m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), KEY_ESC);
+  m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), KEY_SPACE);
+  m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), KEY_ENTER);
+
   m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), BTN_LEFT);
   m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), BTN_RIGHT);
   m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), BTN_MIDDLE);
-
-  /*
-    add_key(KEY_FORWARD);
-    add_key(KEY_BACK);
-  */
 
   m_evdev.add_rel(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), REL_WHEEL);
   m_evdev.add_rel(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), REL_HWHEEL);
@@ -68,6 +69,13 @@ void
 TouchpadDriver::receive_data(uint8_t const* data, size_t size)
 {
   UDrawDecoder decoder(data, size);
+
+  m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), EV_KEY, KEY_FORWARD, decoder.start());
+  m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), EV_KEY, KEY_BACK, decoder.select());
+  m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), EV_KEY, KEY_ESC, decoder.guide());
+  m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), EV_KEY, KEY_SPACE, decoder.down());
+  m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), EV_KEY, KEY_ENTER, decoder.cross());
+  m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), EV_SYN, SYN_REPORT, 0);
 
   m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), EV_KEY, BTN_LEFT,  decoder.right() || decoder.square());
   m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), EV_KEY, BTN_RIGHT, decoder.left() || decoder.circle());
