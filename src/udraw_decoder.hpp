@@ -123,10 +123,11 @@ class UDrawDecoder
 {
 public:
   enum class Mode {
-    UNKNOWN,
+    NONE,
     PEN,
-    FINGER,
-    PINCH,
+    TOUCH,
+    MULTITOUCH,
+    UNKNOWN,
   };
 
 public:
@@ -144,11 +145,13 @@ public:
     int m = (m_data[11] & 0b11000000) >> 6;
 
     if (m == 3) {
-      return Mode::PINCH;
+      return Mode::MULTITOUCH;
     } else if (m == 1) {
       return Mode::PEN;
+    } else if (m == 0) {
+      return Mode::NONE;
     } else if (m == 2) {
-      return Mode::FINGER;
+      return Mode::TOUCH;
     } else {
       return Mode::UNKNOWN;
     }

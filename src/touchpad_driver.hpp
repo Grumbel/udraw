@@ -22,6 +22,7 @@
 #include <chrono>
 
 #include "fwd.hpp"
+#include "udraw_decoder.hpp"
 
 namespace udraw {
 
@@ -59,12 +60,14 @@ private:
   uinpp::EventEmitter* m_rel_x;
   uinpp::EventEmitter* m_rel_y;
 
+  UDrawDecoder::Mode m_previous_mode;
+  int m_discard_events;
   int m_touchdown_pos_x;
   int m_touchdown_pos_y;
   int m_touch_pos_x;
   int m_touch_pos_y;
-  bool m_finger_touching;
-  bool m_pinch_touching;
+  int m_multitouch_pos_x;
+  int m_multitouch_pos_y;
   bool m_scroll_wheel;
   int m_wheel_distance;
   std::chrono::steady_clock::time_point m_touch_time;

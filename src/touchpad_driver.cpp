@@ -44,12 +44,14 @@ TouchpadDriver::TouchpadDriver(uinpp::MultiDevice& evdev) :
   m_rel_hwheel(),
   m_rel_x(),
   m_rel_y(),
+  m_previous_mode(UDrawDecoder::Mode::NONE),
+  m_discard_events(0),
   m_touchdown_pos_x(0),
   m_touchdown_pos_y(0),
   m_touch_pos_x(0),
   m_touch_pos_y(0),
-  m_finger_touching(false),
-  m_pinch_touching(false),
+  m_multitouch_pos_x(0),
+  m_multitouch_pos_y(0),
   m_scroll_wheel(false),
   m_wheel_distance(0),
   m_touch_time()
@@ -117,18 +119,24 @@ TouchpadDriver::receive_data(uint8_t const* data, size_t size)
   m_square->send(decoder.square());
   m_circle->send(decoder.circle());
 
-  if (decoder.mode() == UDrawDecoder::Mode::FINGER)
+  if (decoder.mode() == UDrawDecoder::Mode::TOUCH)
   {
-    if (!m_finger_touching)
-    {
-      m_finger_touching = true;
+    if (m_discard_events > 0) {
+      m_discard_events -= 1;
+    }
+
+    if (m_previous_mode == UDrawDecoder::Mode::MULTITOUCH) {
+      // when switching between TOUCH and MULTITOUCH, the reported
+      // position takes a bit to settle back into a steady state
+      m_discard_events = 16;
+    } else if (m_previous_mode != UDrawDecoder::Mode::TOUCH || m_discard_events > 0) {
       m_touchdown_pos_x = decoder.x();
       m_touchdown_pos_y = decoder.y();
 
+      m_touch_time = std::chrono::steady_clock::now();
+
       m_touch_pos_x = decoder.x();
       m_touch_pos_y = decoder.y();
-
-      m_touch_time = std::chrono::steady_clock::now();
 
       if (m_touch_pos_x < 120 || m_touch_pos_x > 1800)
       {
@@ -139,34 +147,48 @@ TouchpadDriver::receive_data(uint8_t const* data, size_t size)
       {
         m_scroll_wheel = false;
       }
-    }
-
-    if (m_scroll_wheel)
-    {
-      m_wheel_distance += (decoder.y() - m_touch_pos_y) / 10;
-
-      int rel = m_wheel_distance/10;
-      if (rel != 0)
+    } else if (m_discard_events == 0) {
+      if (m_scroll_wheel)
       {
-        m_rel_wheel->send(-rel);
+        m_wheel_distance += (decoder.y() - m_touch_pos_y) / 10;
 
-        m_wheel_distance -= rel;
+        int rel = m_wheel_distance/10;
+        if (rel != 0)
+        {
+          m_rel_wheel->send(-rel);
+
+          m_wheel_distance -= rel;
+          m_touch_pos_x = decoder.x();
+          m_touch_pos_y = decoder.y();
+        }
+      }
+      else
+      {
+        m_rel_x->send(decoder.x() - m_touch_pos_x);
+        m_rel_y->send(decoder.y() - m_touch_pos_y);
+
         m_touch_pos_x = decoder.x();
         m_touch_pos_y = decoder.y();
       }
     }
-    else
-    {
-      m_rel_x->send(decoder.x() - m_touch_pos_x);
-      m_rel_y->send(decoder.y() - m_touch_pos_y);
+  }
+  else if (decoder.mode() == UDrawDecoder::Mode::MULTITOUCH)
+  {
+    if (m_previous_mode != UDrawDecoder::Mode::MULTITOUCH) {
+      m_multitouch_pos_x = decoder.x();
+      m_multitouch_pos_y = decoder.y();
+    } else {
+      int const offset = (m_multitouch_pos_y - decoder.y()) / 10;
 
-      m_touch_pos_x = decoder.x();
-      m_touch_pos_y = decoder.y();
+      m_rel_wheel->send(offset);
+
+      m_multitouch_pos_x = decoder.x();
+      m_multitouch_pos_y = decoder.y();
     }
   }
-  else
+  else if (decoder.mode() == UDrawDecoder::Mode::NONE)
   {
-    if (m_finger_touching) {
+    if (m_previous_mode == UDrawDecoder::Mode::TOUCH) {
       std::chrono::steady_clock::time_point new_touch_time = std::chrono::steady_clock::now();
       auto const click_duration_msec = std::chrono::duration_cast<std::chrono::milliseconds>(new_touch_time - m_touch_time).count();
 
@@ -185,8 +207,6 @@ TouchpadDriver::receive_data(uint8_t const* data, size_t size)
         }
       }
     }
-
-    m_finger_touching = false;
   }
 
   if (send_click) {
@@ -199,6 +219,8 @@ TouchpadDriver::receive_data(uint8_t const* data, size_t size)
   } else {
     m_evdev.sync();
   }
+
+  m_previous_mode = decoder.mode();
 }
 
 } // namespace driver
