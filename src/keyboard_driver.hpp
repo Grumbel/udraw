@@ -25,14 +25,14 @@ namespace udraw {
 class KeyboardDriver : public Driver
 {
 public:
-  KeyboardDriver(Evdev& evdev);
+  KeyboardDriver(uinpp::MultiDevice& evdev);
   ~KeyboardDriver() override;
 
   void init() override;
   void receive_data(uint8_t const* data, size_t size) override;
 
 private:
-  Evdev& m_evdev;
+  uinpp::MultiDevice& m_evdev;
 
 public:
   KeyboardDriver(const KeyboardDriver&) = delete;

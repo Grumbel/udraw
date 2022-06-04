@@ -28,7 +28,7 @@ namespace udraw {
 class UDrawDriver
 {
 public:
-  UDrawDriver(USBDevice& usbdev, Evdev& evdev, Options const& opts);
+  UDrawDriver(USBDevice& usbdev, uinpp::MultiDevice& evdev, Options const& opts);
   ~UDrawDriver();
 
   void run();
@@ -38,7 +38,7 @@ private:
 
 private:
   USBDevice& m_usbdev;
-  Evdev& m_evdev;
+  uinpp::MultiDevice& m_evdev;
   Options const& m_opts;
 
   std::unique_ptr<Driver> m_driver;

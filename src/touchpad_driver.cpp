@@ -19,13 +19,13 @@
 #include <cmath>
 
 #include <logmich/log.hpp>
+#include <uinpp/multi_device.hpp>
 
 #include "udraw_decoder.hpp"
-#include "evdev.hpp"
 
 namespace udraw {
 
-TouchpadDriver::TouchpadDriver(Evdev& evdev) :
+TouchpadDriver::TouchpadDriver(uinpp::MultiDevice& evdev) :
   m_evdev(evdev),
   m_touchdown_pos_x(0),
   m_touchdown_pos_y(0),
@@ -46,20 +46,20 @@ TouchpadDriver::~TouchpadDriver()
 void
 TouchpadDriver::init()
 {
-  m_evdev.add_key(BTN_LEFT);
-  m_evdev.add_key(BTN_RIGHT);
-  m_evdev.add_key(BTN_MIDDLE);
+  m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), BTN_LEFT);
+  m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), BTN_RIGHT);
+  m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), BTN_MIDDLE);
 
   /*
     add_key(KEY_FORWARD);
     add_key(KEY_BACK);
   */
 
-  m_evdev.add_rel(REL_WHEEL);
-  m_evdev.add_rel(REL_HWHEEL);
+  m_evdev.add_rel(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), REL_WHEEL);
+  m_evdev.add_rel(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), REL_HWHEEL);
 
-  m_evdev.add_rel(REL_X);
-  m_evdev.add_rel(REL_Y);
+  m_evdev.add_rel(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), REL_X);
+  m_evdev.add_rel(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), REL_Y);
 
   m_evdev.finish();
 }
@@ -69,9 +69,9 @@ TouchpadDriver::receive_data(uint8_t const* data, size_t size)
 {
   UDrawDecoder decoder(data, size);
 
-  m_evdev.send(EV_KEY, BTN_LEFT,  decoder.right() || decoder.square());
-  m_evdev.send(EV_KEY, BTN_RIGHT, decoder.left() || decoder.circle());
-  m_evdev.send(EV_KEY, BTN_MIDDLE, decoder.up() || decoder.triangle());
+  m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), EV_KEY, BTN_LEFT,  decoder.right() || decoder.square());
+  m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), EV_KEY, BTN_RIGHT, decoder.left() || decoder.circle());
+  m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), EV_KEY, BTN_MIDDLE, decoder.up() || decoder.triangle());
 
   if (decoder.mode() == UDrawDecoder::Mode::FINGER)
   {
@@ -104,7 +104,7 @@ TouchpadDriver::receive_data(uint8_t const* data, size_t size)
       int rel = m_wheel_distance/10;
       if (rel != 0)
       {
-        m_evdev.send(EV_REL, REL_WHEEL, -rel);
+        m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), EV_REL, REL_WHEEL, -rel);
 
         m_wheel_distance -= rel;
         m_touch_pos_x = decoder.x();
@@ -113,8 +113,8 @@ TouchpadDriver::receive_data(uint8_t const* data, size_t size)
     }
     else
     {
-      m_evdev.send(EV_REL, REL_X, decoder.x() - m_touch_pos_x);
-      m_evdev.send(EV_REL, REL_Y, decoder.y() - m_touch_pos_y);
+      m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), EV_REL, REL_X, decoder.x() - m_touch_pos_x);
+      m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), EV_REL, REL_Y, decoder.y() - m_touch_pos_y);
 
       m_touch_pos_x = decoder.x();
       m_touch_pos_y = decoder.y();
@@ -138,16 +138,16 @@ TouchpadDriver::receive_data(uint8_t const* data, size_t size)
             std::abs(m_touch_pos_y - m_touchdown_pos_y) < threshold)
         {
           log_debug("sending click");
-          m_evdev.send(EV_KEY, BTN_LEFT, 1);
-          m_evdev.send(EV_SYN, SYN_REPORT, 0);
-          m_evdev.send(EV_KEY, BTN_LEFT, 0);
+          m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), EV_KEY, BTN_LEFT, 1);
+          m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), EV_SYN, SYN_REPORT, 0);
+          m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), EV_KEY, BTN_LEFT, 0);
         }
       }
     }
 
     m_finger_touching = false;
   }
-  m_evdev.send(EV_SYN, SYN_REPORT, 0);
+  m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), EV_SYN, SYN_REPORT, 0);
 }
 
 } // namespace driver

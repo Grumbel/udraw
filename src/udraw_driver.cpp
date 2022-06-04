@@ -21,8 +21,8 @@
 
 #include <fmt/format.h>
 #include <logmich/log.hpp>
+#include <uinpp/multi_device.hpp>
 
-#include "evdev.hpp"
 #include "options.hpp"
 #include "udraw_decoder.hpp"
 #include "usb_device.hpp"
@@ -53,7 +53,7 @@ void print_raw_data(std::ostream& out, uint8_t const* data, size_t len)
 
 } // namespace
 
-UDrawDriver::UDrawDriver(USBDevice& usbdev, Evdev& evdev, Options const& opts) :
+UDrawDriver::UDrawDriver(USBDevice& usbdev, uinpp::MultiDevice& evdev, Options const& opts) :
   m_usbdev(usbdev),
   m_evdev(evdev),
   m_opts(opts),

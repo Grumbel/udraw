@@ -26,14 +26,14 @@ namespace udraw {
 class GamepadDriver : public Driver
 {
 public:
-  GamepadDriver(Evdev& evdev);
+  GamepadDriver(uinpp::MultiDevice& evdev);
   ~GamepadDriver() override;
 
   void init() override;
   void receive_data(uint8_t const* data, size_t size) override;
 
 private:
-  Evdev& m_evdev;
+  uinpp::MultiDevice& m_evdev;
 
 public:
   GamepadDriver(const GamepadDriver&) = delete;

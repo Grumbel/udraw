@@ -25,14 +25,14 @@ namespace udraw {
 class TabletDriver : public Driver
 {
 public:
-  TabletDriver(Evdev& evdev);
+  TabletDriver(uinpp::MultiDevice& evdev);
   ~TabletDriver();
 
   void init() override;
   void receive_data(uint8_t const* data, size_t size) override;
 
 private:
-  Evdev& m_evdev;
+  uinpp::MultiDevice& m_evdev;
 
 public:
   TabletDriver(const TabletDriver&) = delete;

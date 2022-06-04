@@ -17,10 +17,11 @@
 #ifndef HEADER_UDRAW_FWD_HPP
 #define HEADER_UDRAW_FWD_HPP
 
+#include <uinpp/fwd.hpp>
+
 namespace udraw {
 
 class Driver;
-class Evdev;
 class Options;
 class USBDevice;
 

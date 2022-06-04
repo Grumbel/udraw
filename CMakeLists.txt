@@ -43,6 +43,11 @@ function(build_dependencies)
   if(NOT TARGET logmich::logmich)
     add_subdirectory(external/logmich/ EXCLUDE_FROM_ALL)
   endif()
+
+  find_package(uinpp)
+  if(NOT TARGET uinpp::uinpp)
+    add_subdirectory(external/uinpp/)
+  endif()
 endfunction()
 build_dependencies()
 
@@ -52,6 +57,7 @@ target_compile_options(udraw-driver PRIVATE ${WARNINGS_CXX_FLAGS})
 target_link_libraries(udraw-driver
   fmt::fmt
   logmich::logmich
+  uinpp::uinpp
   PkgConfig::LIBUSB
   Threads::Threads)
 

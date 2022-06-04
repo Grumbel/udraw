@@ -28,14 +28,14 @@ namespace udraw {
 class TouchpadDriver : public Driver
 {
 public:
-  TouchpadDriver(Evdev& evdev);
+  TouchpadDriver(uinpp::MultiDevice& evdev);
   ~TouchpadDriver() override;
 
   void init() override;
   void receive_data(uint8_t const* data, size_t size) override;
 
 private:
-  Evdev& m_evdev;
+  uinpp::MultiDevice& m_evdev;
 
   int m_touchdown_pos_x;
   int m_touchdown_pos_y;

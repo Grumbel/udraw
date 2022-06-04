@@ -16,12 +16,13 @@
 
 #include "tablet_driver.hpp"
 
-#include "evdev.hpp"
+#include <uinpp/multi_device.hpp>
+
 #include "udraw_decoder.hpp"
 
 namespace udraw {
 
-TabletDriver::TabletDriver(Evdev& evdev) :
+TabletDriver::TabletDriver(uinpp::MultiDevice& evdev) :
   m_evdev(evdev)
 {
 }
@@ -33,18 +34,18 @@ TabletDriver::~TabletDriver()
 void
 TabletDriver::init()
 {
-  m_evdev.add_abs(ABS_X, 0, 1913, 0, 0);
-  m_evdev.add_abs(ABS_Y, 0, 1076, 0, 0);
-  m_evdev.add_abs(ABS_PRESSURE, 0, 143, 0, 0);
+  m_evdev.add_abs(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), ABS_X, 0, 1913, 0, 0);
+  m_evdev.add_abs(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), ABS_Y, 0, 1076, 0, 0);
+  m_evdev.add_abs(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), ABS_PRESSURE, 0, 143, 0, 0);
 
-  m_evdev.add_key(BTN_TOUCH);
-  m_evdev.add_key(BTN_TOOL_PEN);
+  m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), BTN_TOUCH);
+  m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), BTN_TOOL_PEN);
 
-  m_evdev.add_rel(REL_WHEEL);
-  m_evdev.add_rel(REL_HWHEEL);
+  m_evdev.add_rel(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), REL_WHEEL);
+  m_evdev.add_rel(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), REL_HWHEEL);
 
-  m_evdev.add_rel(REL_X);
-  m_evdev.add_rel(REL_Y);
+  m_evdev.add_rel(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), REL_X);
+  m_evdev.add_rel(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), REL_Y);
 
   m_evdev.finish();
 }
@@ -56,26 +57,26 @@ TabletDriver::receive_data(uint8_t const* data, size_t size)
 
   if (decoder.mode() == UDrawDecoder::Mode::PEN)
   {
-    m_evdev.send(EV_ABS, ABS_X, decoder.x());
-    m_evdev.send(EV_ABS, ABS_Y, decoder.y());
-    m_evdev.send(EV_ABS, ABS_PRESSURE, decoder.pressure());
-    m_evdev.send(EV_KEY, BTN_TOOL_PEN, 1);
+    m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), EV_ABS, ABS_X, decoder.x());
+    m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), EV_ABS, ABS_Y, decoder.y());
+    m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), EV_ABS, ABS_PRESSURE, decoder.pressure());
+    m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), EV_KEY, BTN_TOOL_PEN, 1);
 
     if (decoder.pressure() > 5)
     {
-      m_evdev.send(EV_KEY, BTN_TOUCH, 1);
+      m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), EV_KEY, BTN_TOUCH, 1);
     }
     else
     {
-      m_evdev.send(EV_KEY, BTN_TOUCH, 0);
+      m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), EV_KEY, BTN_TOUCH, 0);
     }
 
-    m_evdev.send(EV_SYN, SYN_REPORT, 0);
+    m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), EV_SYN, SYN_REPORT, 0);
   }
   else
   {
-    m_evdev.send(EV_KEY, BTN_TOOL_PEN, 0);
-    m_evdev.send(EV_SYN, SYN_REPORT, 0);
+    m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), EV_KEY, BTN_TOOL_PEN, 0);
+    m_evdev.send(static_cast<uint32_t>(uinpp::DeviceType::GENERIC), EV_SYN, SYN_REPORT, 0);
   }
 }
 

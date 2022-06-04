@@ -33,8 +33,8 @@
 
 #include <fmt/format.h>
 #include <logmich/log.hpp>
+#include <uinpp/multi_device.hpp>
 
-#include "evdev.hpp"
 #include "options.hpp"
 #include "udraw_decoder.hpp"
 #include "udraw_driver.hpp"
@@ -118,7 +118,8 @@ void run(int argc, char** argv)
 
   {
     USBDevice usbdev(usb_ctx, UDRAW_VENDOR_ID, UDRAW_PRODUCT_ID);
-    Evdev evdev;
+    //uinpp::MultiDevice evdev;
+    uinpp::MultiDevice evdev;
     UDrawDriver driver(usbdev, evdev, opts);
     driver.run();
   }
