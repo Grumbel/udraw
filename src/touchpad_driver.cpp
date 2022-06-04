@@ -63,27 +63,35 @@ TouchpadDriver::~TouchpadDriver()
 void
 TouchpadDriver::init()
 {
-  m_touchclick = m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), BTN_LEFT);
+  uinpp::VirtualDevice* keyboard = m_evdev.create_device(0, uinpp::DeviceType::KEYBOARD);
+  keyboard->set_name("uDraw Touchpad Driver (keyboard)");
+  keyboard->set_usbid(0x3, 0x20d6, 0xcb17, 1);
 
-  m_start = m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), KEY_FORWARD);
-  m_select = m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), KEY_BACK);
-  m_guide = m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), KEY_ESC);
-  m_down = m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), KEY_SPACE);
-  m_cross = m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::KEYBOARD), KEY_ENTER);
+  m_start = keyboard->add_key(KEY_FORWARD);
+  m_select = keyboard->add_key(KEY_BACK);
+  m_guide = keyboard->add_key(KEY_ESC);
+  m_down = keyboard->add_key(KEY_SPACE);
+  m_cross = keyboard->add_key(KEY_ENTER);
 
-  m_right = m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), BTN_LEFT);
-  m_left = m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), BTN_RIGHT);
-  m_up = m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), BTN_MIDDLE);
+  uinpp::VirtualDevice* mouse = m_evdev.create_device(0, uinpp::DeviceType::MOUSE);
+  mouse->set_name("uDraw Touchpad Driver (mouse)");
+  mouse->set_usbid(0x3, 0x20d6, 0xcb17, 1);
 
-  m_square = m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), BTN_LEFT);
-  m_circle = m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), BTN_RIGHT);
-  m_triangle = m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), BTN_MIDDLE);
+  m_touchclick = mouse->add_key(BTN_LEFT);
 
-  m_rel_wheel = m_evdev.add_rel(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), REL_WHEEL);
-  m_rel_hwheel = m_evdev.add_rel(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), REL_HWHEEL);
+  m_right = mouse->add_key(BTN_LEFT);
+  m_left = mouse->add_key(BTN_RIGHT);
+  m_up = mouse->add_key(BTN_MIDDLE);
 
-  m_rel_x = m_evdev.add_rel(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), REL_X);
-  m_rel_y = m_evdev.add_rel(static_cast<uint32_t>(uinpp::DeviceType::MOUSE), REL_Y);
+  m_square = mouse->add_key(BTN_LEFT);
+  m_circle = mouse->add_key(BTN_RIGHT);
+  m_triangle = mouse->add_key(BTN_MIDDLE);
+
+  m_rel_wheel = mouse->add_rel(REL_WHEEL);
+  m_rel_hwheel = mouse->add_rel(REL_HWHEEL);
+
+  m_rel_x = mouse->add_rel(REL_X);
+  m_rel_y = mouse->add_rel(REL_Y);
 
   m_evdev.finish();
 }
