@@ -34,8 +34,8 @@ GamepadDriver::~GamepadDriver()
 void
 GamepadDriver::init()
 {
-  m_evdev.add_abs(static_cast<uint32_t>(uinpp::DeviceType::JOYSTICK), ABS_X, -1, 1, 0, 0);
-  m_evdev.add_abs(static_cast<uint32_t>(uinpp::DeviceType::JOYSTICK), ABS_Y, -1, 1, 0, 0);
+  m_evdev.add_abs(static_cast<uint32_t>(uinpp::DeviceType::JOYSTICK), ABS_X, -1, 1, 0, 0, 0);
+  m_evdev.add_abs(static_cast<uint32_t>(uinpp::DeviceType::JOYSTICK), ABS_Y, -1, 1, 0, 0, 0);
 
   m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::JOYSTICK), BTN_A);
   m_evdev.add_key(static_cast<uint32_t>(uinpp::DeviceType::JOYSTICK), BTN_B);

@@ -34,6 +34,14 @@ public:
 private:
   uinpp::MultiDevice& m_evdev;
 
+  uinpp::EventEmitter* m_em_x;
+  uinpp::EventEmitter* m_em_y;
+  uinpp::EventEmitter* m_em_pressure;
+  uinpp::EventEmitter* m_em_touch;
+  uinpp::EventEmitter* m_em_tool_pen;
+  uinpp::EventEmitter* m_em_wheel;
+  uinpp::EventEmitter* m_em_hwheel;
+
 public:
   TabletDriver(const TabletDriver&) = delete;
   TabletDriver& operator=(const TabletDriver&) = delete;
