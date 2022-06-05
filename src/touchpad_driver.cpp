@@ -67,7 +67,7 @@ TouchpadDriver::init()
 {
   uinpp::VirtualDevice* keyboard = m_evdev.create_device(0, uinpp::DeviceType::KEYBOARD);
   keyboard->set_name("uDraw Touchpad Driver (keyboard)");
-  keyboard->set_usbid(0x3, 0x20d6, 0xcb17, 1);
+  keyboard->set_usbid(0x3, 0x20d6, 0xcb17, 0x110);
 
   m_start = keyboard->add_key(KEY_FORWARD);
   m_select = keyboard->add_key(KEY_BACK);
@@ -77,7 +77,7 @@ TouchpadDriver::init()
 
   uinpp::VirtualDevice* mouse = m_evdev.create_device(0, uinpp::DeviceType::MOUSE);
   mouse->set_name("uDraw Touchpad Driver (mouse)");
-  mouse->set_usbid(0x3, 0x20d6, 0xcb17, 1);
+  mouse->set_usbid(0x3, 0x20d6, 0xcb17, 0x110);
 
   m_touchclick = mouse->add_key(BTN_LEFT);
 
@@ -89,8 +89,8 @@ TouchpadDriver::init()
   m_circle = mouse->add_key(BTN_RIGHT);
   m_triangle = mouse->add_key(BTN_MIDDLE);
 
-  m_rel_wheel = mouse->add_rel(REL_WHEEL);
-  m_rel_hwheel = mouse->add_rel(REL_HWHEEL);
+  m_rel_wheel = mouse->add_rel(REL_WHEEL_HI_RES);
+  m_rel_hwheel = mouse->add_rel(REL_HWHEEL_HI_RES);
 
   m_rel_x = mouse->add_rel(REL_X);
   m_rel_y = mouse->add_rel(REL_Y);
@@ -150,12 +150,12 @@ TouchpadDriver::receive_data(uint8_t const* data, size_t size)
     } else if (m_discard_events == 0) {
       if (m_scroll_wheel)
       {
-        m_wheel_distance += (decoder.y() - m_touch_pos_y) / 10;
+        m_wheel_distance += (decoder.y() - m_touch_pos_y);
 
-        int rel = m_wheel_distance/10;
+        int rel = m_wheel_distance;
         if (rel != 0)
         {
-          m_rel_wheel->send(-rel);
+          m_rel_wheel->send(-rel * 5);
 
           m_wheel_distance -= rel;
           m_touch_pos_x = decoder.x();
@@ -178,9 +178,9 @@ TouchpadDriver::receive_data(uint8_t const* data, size_t size)
       m_multitouch_pos_x = decoder.x();
       m_multitouch_pos_y = decoder.y();
     } else {
-      int const offset = (m_multitouch_pos_y - decoder.y()) / 10;
+      int const offset = (m_multitouch_pos_y - decoder.y());
 
-      m_rel_wheel->send(offset);
+      m_rel_wheel->send(offset * 5);
 
       m_multitouch_pos_x = decoder.x();
       m_multitouch_pos_y = decoder.y();
