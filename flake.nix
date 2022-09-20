@@ -41,7 +41,7 @@
             ];
             buildInputs = with pkgs; [
               libusb
-              fmt
+              fmt_8
             ] ++ [
               tinycmmc.defaultPackage.${system}
               logmich.defaultPackage.${system}
