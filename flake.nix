@@ -29,31 +29,36 @@
     flake-utils.lib.eachDefaultSystem (system:
       let
         pkgs = nixpkgs.legacyPackages.${system};
-      in rec {
-        packages = flake-utils.lib.flattenTree {
+      in {
+        packages = rec {
+          default = udraw;
+
           udraw = pkgs.stdenv.mkDerivation {
             pname = "udraw";
             version = "0.1.0";
+
             src = nixpkgs.lib.cleanSource ./.;
+
             nativeBuildInputs = with pkgs; [
               cmake
               pkg-config
             ];
+
             buildInputs = with pkgs; [
               libusb
               fmt_8
             ] ++ [
-              tinycmmc.defaultPackage.${system}
-              logmich.defaultPackage.${system}
-              uinpp.defaultPackage.${system}
-              strutcpp.defaultPackage.${system}
+              tinycmmc.packages.${system}.default
+              logmich.packages.${system}.default
+              uinpp.packages.${system}.default
+              strutcpp.packages.${system}.default
             ];
+
             meta = {
               mainProgram = "udraw-driver";
             };
            };
         };
-        defaultPackage = packages.udraw;
       }
     );
 }
