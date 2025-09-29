@@ -1,6 +1,6 @@
  {
   inputs = {
-    nixpkgs.url = "github:NixOS/nixpkgs/nixos-23.05";
+    nixpkgs.url = "github:NixOS/nixpkgs?ref=nixos-25.05";
     flake-utils.url = "github:numtide/flake-utils";
 
     tinycmmc.url = "github:grumbel/tinycmmc";
@@ -43,8 +43,8 @@
             ];
 
             buildInputs = with pkgs; [
-              libusb
-              fmt_8
+              libusb1
+              fmt
             ] ++ [
               tinycmmc.packages.${system}.default
               logmich.packages.${system}.default
