@@ -28,11 +28,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1753120025,
-        "narHash": "sha256-e8k/ZzPAfLgNF30wmXHDX5ovK/msTH6sgzxWKzZhtOY=",
+        "lastModified": 1763578800,
+        "narHash": "sha256-mnqKS+m/m/zwlOpse3+QnP54fgaXR9/8FW+FDq/MKlo=",
         "owner": "logmich",
         "repo": "logmich",
-        "rev": "c73c7b7d6cd050d1bcc42d522ce80a2eb86da5c8",
+        "rev": "f69ccb6b8963d995eeb886f60e8c30b2742d596e",
         "type": "github"
       },
       "original": {
@@ -43,11 +43,11 @@
     },
     "nixpkgs": {
       "locked": {
-        "lastModified": 1762977756,
-        "narHash": "sha256-4PqRErxfe+2toFJFgcRKZ0UI9NSIOJa+7RXVtBhy4KE=",
+        "lastModified": 1763966396,
+        "narHash": "sha256-6eeL1YPcY1MV3DDStIDIdy/zZCDKgHdkCmsrLJFiZf0=",
         "owner": "NixOS",
         "repo": "nixpkgs",
-        "rev": "c5ae371f1a6a7fd27823bc500d9390b38c05fa55",
+        "rev": "5ae3b07d8d6527c42f17c876e404993199144b6a",
         "type": "github"
       },
       "original": {
@@ -77,11 +77,11 @@
         ]
       },
       "locked": {
-        "lastModified": 1763252315,
-        "narHash": "sha256-dC11OYQmD42CprHcDSN0JbdPTuigYwjV5wq/oUnuMRU=",
+        "lastModified": 1763577479,
+        "narHash": "sha256-zdlglWgTTdEGT5fzdoH/iDk9T2m6FjHWsfVbMC+2xRo=",
         "owner": "grumbel",
         "repo": "strutcpp",
-        "rev": "83712b6946860f42af3178dcb0ac1196c82c3646",
+        "rev": "04b3bf106b67a2870c2dc3d9ba843e375a834983",
         "type": "github"
       },
       "original": {
